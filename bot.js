@@ -174,6 +174,7 @@ client.on("interactionCreate", async (interaction) => {
     const tankField = await generateRoleField(eventSession.attendees.tank);
     const healerField = await generateRoleField(eventSession.attendees.healer);
     const dpsField = await generateRoleField(eventSession.attendees.dps);
+    console.log("Nice");
 
     const eventEmbed = new EmbedBuilder()
       .setColor("#e90303")
