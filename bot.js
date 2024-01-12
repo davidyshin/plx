@@ -189,17 +189,17 @@ client.on("interactionCreate", async (interaction) => {
         inline: true,
       })
       .addFields({
-        name: "🛡",
+        name: "🛡 Tanks",
         value: !!eventSession.attendees.tank.length ? tankField : "None",
         inline: false,
       })
       .addFields({
-        name: "💉",
+        name: "💉 Healers",
         value: !!eventSession.attendees.healer.length ? healerField : "None",
         inline: false,
       })
       .addFields({
-        name: "⚔️",
+        name: "⚔️ DPS",
         value: !!eventSession.attendees.dps.length ? dpsField : "None",
         inline: false,
       })
@@ -282,17 +282,17 @@ client.on("messageCreate", async (message) => {
       .setDescription(`Scheduled for ${eventDateTime} (Eastern Time)`)
       .addFields({ name: "Total Signed Up", value: "0", inline: false })
       .addFields({
-        name: "🛡",
+        name: "🛡 Tanks",
         value: "None",
         inline: false,
       })
       .addFields({
-        name: "💉",
+        name: "💉 Healers",
         value: "None",
         inline: false,
       })
       .addFields({
-        name: "⚔️",
+        name: "⚔️ DPS",
         value: "None",
         inline: false,
       })
