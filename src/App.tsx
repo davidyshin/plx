@@ -1,13 +1,16 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { Plus, Shield, Trash2, Users, Loader2, CheckCircle2 } from 'lucide-react'
+import { Plus, Shield, Trash2, Users, Loader2, CheckCircle2, LockKeyhole } from 'lucide-react'
 import { AVAILABILITY, CLASS_COLORS, CLASS_RACES, ICONS, ROLES } from './data'
 import { configured, supabase } from './supabase'
 
 type Pref = { id:string; player_name:string; discord_name:string; class_name:string; race_name:string; role_name:string; priority:number; availability:string; notes:string; created_at:string }
 const firstClass = 'Warrior'
 const empty = { player_name:'', discord_name:'', class_name:firstClass, race_name:'Human', role_name:'Tank', priority:1, availability:'Flexible', notes:'' }
+const sitePassword = import.meta.env.VITE_SITE_PASSWORD || ''
 
 export default function App(){
+  const [unlocked,setUnlocked]=useState(()=>!sitePassword||sessionStorage.getItem('plx-unlocked')==='yes')
+  const [password,setPassword]=useState(''), [passwordError,setPasswordError]=useState(false)
   const [rows,setRows]=useState<Pref[]>([]), [form,setForm]=useState(empty), [loading,setLoading]=useState(true), [saving,setSaving]=useState(false), [open,setOpen]=useState(false), [message,setMessage]=useState('')
   async function load(){ if(!supabase){setLoading(false);return} const {data}=await supabase.from('guild_preferences').select('*').order('created_at',{ascending:false}); setRows(data||[]); setLoading(false) }
   useEffect(()=>{load(); const client=supabase; if(!client)return; const channel=client.channel('roster').on('postgres_changes',{event:'*',schema:'public',table:'guild_preferences'},load).subscribe(); return()=>{client.removeChannel(channel)}},[])
@@ -16,6 +19,8 @@ export default function App(){
   async function submit(e:FormEvent){e.preventDefault(); if(!supabase)return; setSaving(true);setMessage(''); const {error}=await supabase.from('guild_preferences').insert(form); setSaving(false); if(error){setMessage(error.message);return} setMessage('preference added.'); setForm({...empty,player_name:form.player_name,discord_name:form.discord_name,priority:Math.min(form.priority+1,5)}); await load()}
   async function remove(id:string){if(!supabase)return; await supabase.from('guild_preferences').delete().eq('id',id); await load()}
   function pickClass(class_name:string){setForm(f=>({...f,class_name,race_name:CLASS_RACES[class_name][0]}))}
+  function unlock(e:FormEvent){e.preventDefault(); if(password===sitePassword){sessionStorage.setItem('plx-unlocked','yes');setUnlocked(true);setPasswordError(false)}else{setPasswordError(true);setPassword('')}}
+  if(!unlocked)return <main className="gate"><form onSubmit={unlock}><span className="brandmark">p</span><h1>plx</h1><p>pros only.</p><label>password<input autoFocus type="password" value={password} onChange={e=>{setPassword(e.target.value);setPasswordError(false)}} aria-invalid={passwordError}/></label>{passwordError&&<span className="gate-error">try again.</span>}<button className="primary"><LockKeyhole size={17}/> enter</button></form></main>
   return <div className="app">
     <header><a className="brand" href="#"><span className="brandmark">p</span><span>plx<small>wow guild</small></span></a><nav><a href="#roster">roster</a><a href="#needs">roles</a><button onClick={()=>setOpen(true)}>add preference</button></nav></header>
     <main>

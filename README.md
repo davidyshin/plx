@@ -6,14 +6,16 @@ A public, collaborative World of Warcraft guild preference board built with Reac
 
 1. Create a Supabase project.
 2. Run `supabase/schema.sql` in the Supabase SQL editor.
-3. Copy `.env.example` to `.env` and add the project URL and publishable key from the Supabase Connect dialog.
+3. Copy `.env.example` to `.env`, add the project URL and publishable key from the Supabase Connect dialog, and set `VITE_SITE_PASSWORD`.
 4. Run `npm install` and `npm run dev`.
 
 The included RLS policies intentionally allow anyone with the site URL to read, add, and remove preferences. Never put a Supabase service-role key in the frontend.
 
 ## Netlify
 
-Import this folder as a new site. Netlify reads `netlify.toml`. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` under Site configuration → Environment variables, then deploy.
+Import this folder as a new site. Netlify reads `netlify.toml`. Add `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_SITE_PASSWORD` under Site configuration → Environment variables, then deploy.
+
+The password gate runs entirely in the browser and is only a casual-access deterrent. It does not protect sensitive data or secure the Supabase API.
 
 ## Namecheap domain
 
