@@ -304,7 +304,7 @@ export default function App() {
     <div className="app">
       <header>
         <a className="brand" href="#top">
-          <span className="brandmark">p</span>
+          <span className="brandmark"><img src="/paddington-bear-logo.png" alt="" /></span>
           <span>
             plx<small>world of warcraft</small>
           </span>
@@ -486,7 +486,7 @@ export default function App() {
       </main>
       <footer>
         <div className="brand">
-          <span className="brandmark">p</span>
+          <span className="brandmark"><img src="/paddington-bear-logo.png" alt="" /></span>
           <span>plx</span>
         </div>
         <p>plx is for pros.</p>
