@@ -504,24 +504,48 @@ export default function App() {
             <span className="overline">wow forever • horde</span>
             <h2>class availability</h2>
             <div className="availability-grid">
-              {Object.entries(CLASS_RACES).map(([className, races]) => (
-                <article key={className}>
-                  <div className="summary-class">
-                    <img src={ICONS[className]} alt="" />
-                    <b>{className}</b>
-                  </div>
-                  <div className="summary-races">
-                    {races.map((race) => (
-                      <span key={race}><img src={RACE_ICONS[race]} alt="" />{race}</span>
-                    ))}
-                  </div>
-                  <div className="summary-roles">
-                    {CLASS_ROLES[className].map((role) => (
-                      <span key={role}><RoleIcon role={role} size={13} />{role}</span>
-                    ))}
-                  </div>
-                </article>
-              ))}
+              {Object.entries(CLASS_RACES).map(([className, races]) => {
+                const classPicks = rows.filter((row) => row.class_name === className);
+                return (
+                  <article key={className}>
+                    <div className="summary-class">
+                      <img src={ICONS[className]} alt="" />
+                      <b>{className}</b>
+                      <small>{classPicks.length ? `${classPicks.length} selected` : "unselected"}</small>
+                    </div>
+                    <div className="summary-races">
+                      {races.map((race) => {
+                        const picks = classPicks.filter((row) => row.race_name === race);
+                        return (
+                          <div className={`race-coverage ${picks.length ? "chosen" : "open"}`} key={race}>
+                            <div className="race-name">
+                              <img src={RACE_ICONS[race]} alt="" />
+                              <b>{race}</b>
+                              <small>{picks.length ? `${picks.length} picked` : "open"}</small>
+                            </div>
+                            {picks.length > 0 && (
+                              <div className="race-picks">
+                                {picks.map((pick) => (
+                                  <span key={pick.id}>
+                                    {pick.discord_avatar_url && <img src={pick.discord_avatar_url} alt="" />}
+                                    {pick.discord_name} <em>#{pick.priority}</em>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="summary-roles">
+                      {CLASS_ROLES[className].map((role) => {
+                        const count = classPicks.filter((pick) => pick.role_name === role).length;
+                        return <span key={role}><RoleIcon role={role} size={13} />{role}{count > 0 && ` · ${count}`}</span>;
+                      })}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </section>
         </div>
