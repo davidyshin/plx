@@ -15,7 +15,7 @@ The included RLS policies intentionally allow anyone with the site URL to read, 
 
 Import this folder as a new site. Netlify reads `netlify.toml`. Add `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_SITE_PASSWORD` under Site configuration → Environment variables, then deploy.
 
-The password gate runs entirely in the browser and is only a casual-access deterrent. It does not protect sensitive data or secure the Supabase API.
+The roster is public to view. The password unlocks add/remove controls for the current browser session. This gate runs entirely in the browser and is only a casual-access deterrent; it does not secure the Supabase API.
 
 ## Namecheap domain
 
