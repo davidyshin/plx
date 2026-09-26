@@ -205,6 +205,7 @@ form h2 {
   color: #ede6d5;
   letter-spacing: -0.02em;
 }
+.section-note{margin:7px 0 0;color:#858d86;font-size:12px}
 .roster {
   border-top: 1px solid var(--line);
 }

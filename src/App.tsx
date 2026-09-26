@@ -203,7 +203,7 @@ export default function App() {
     () =>
       ROLES.map((role) => ({
         role,
-        count: rows.filter((r) => r.role_name === role).length,
+        count: rows.filter((r) => r.priority === 1 && r.role_name === role).length,
       })),
     [rows],
   );
@@ -465,8 +465,9 @@ export default function App() {
         <section className="composition" id="composition">
           <div className="section-head">
             <div>
-              <span className="overline">at a glance</span>
+              <span className="overline">first choices only</span>
               <h2>role composition</h2>
+              <p className="section-note">Counts only each player’s #1 preference.</p>
             </div>
           </div>
           <div className="role-grid">
