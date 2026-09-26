@@ -502,9 +502,9 @@ export default function App() {
           <section className="availability-summary" aria-modal="true" role="dialog">
             <button type="button" className="close" onClick={() => setSummaryOpen(false)}>×</button>
             <span className="overline">wow forever • horde</span>
-            <h2>class availability</h2>
+            <h2>class / spec availability</h2>
             <div className="availability-grid">
-              {Object.entries(CLASS_RACES).map(([className, races]) => {
+              {Object.keys(CLASS_RACES).map((className) => {
                 const classPicks = rows.filter((row) => row.class_name === className);
                 return (
                   <article key={className}>
@@ -513,18 +513,18 @@ export default function App() {
                       <b>{className}</b>
                       <small>{classPicks.length ? `${classPicks.length} selected` : "unselected"}</small>
                     </div>
-                    <div className="summary-races">
-                      {races.map((race) => {
-                        const picks = classPicks.filter((row) => row.race_name === race);
+                    <div className="summary-specs">
+                      {CLASS_ROLES[className].map((spec) => {
+                        const picks = classPicks.filter((row) => row.role_name === spec);
                         return (
-                          <div className={`race-coverage ${picks.length ? "chosen" : "open"}`} key={race}>
-                            <div className="race-name">
-                              <img src={RACE_ICONS[race]} alt="" />
-                              <b>{race}</b>
+                          <div className={`spec-coverage ${picks.length ? "chosen" : "open"}`} key={spec}>
+                            <div className="spec-name">
+                              <RoleIcon role={spec} size={16} />
+                              <b>{spec}</b>
                               <small>{picks.length ? `${picks.length} picked` : "open"}</small>
                             </div>
                             {picks.length > 0 && (
-                              <div className="race-picks">
+                              <div className="spec-picks">
                                 {picks.map((pick) => (
                                   <span key={pick.id}>
                                     {pick.discord_avatar_url && <img src={pick.discord_avatar_url} alt="" />}
@@ -535,12 +535,6 @@ export default function App() {
                             )}
                           </div>
                         );
-                      })}
-                    </div>
-                    <div className="summary-roles">
-                      {CLASS_ROLES[className].map((role) => {
-                        const count = classPicks.filter((pick) => pick.role_name === role).length;
-                        return <span key={role}><RoleIcon role={role} size={13} />{role}{count > 0 && ` · ${count}`}</span>;
                       })}
                     </div>
                   </article>
