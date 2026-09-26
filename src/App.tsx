@@ -1,6 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
+  Check,
+  ChevronDown,
   Crosshair,
   HeartPulse,
   Loader2,
@@ -11,7 +13,15 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import { AVAILABILITY, CLASS_COLORS, CLASS_RACES, ICONS, ROLES } from "./data";
+import {
+  AVAILABILITY,
+  CLASS_COLORS,
+  CLASS_RACES,
+  CLASS_ROLES,
+  ICONS,
+  RACE_ICONS,
+  ROLES,
+} from "./data";
 import { configured, supabase } from "./supabase";
 
 type Pref = {
@@ -49,6 +59,58 @@ function RoleIcon({ role, size = 16 }: { role: string; size?: number }) {
   return <Crosshair size={size} />;
 }
 
+function IconSelect({
+  value,
+  options,
+  icons,
+  onChange,
+  label,
+}: {
+  value: string;
+  options: string[];
+  icons: Record<string, string>;
+  onChange: (value: string) => void;
+  label: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className={`icon-select ${expanded ? "expanded" : ""}`}>
+      <button
+        type="button"
+        className="icon-select-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={expanded}
+        aria-label={label}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <img src={icons[value]} alt="" />
+        <span>{value}</span>
+        <ChevronDown size={16} />
+      </button>
+      {expanded && (
+        <div className="icon-select-menu" role="listbox" tabIndex={-1}>
+          {options.map((option) => (
+            <button
+              type="button"
+              role="option"
+              aria-selected={option === value}
+              key={option}
+              onClick={() => {
+                onChange(option);
+                setExpanded(false);
+              }}
+            >
+              <img src={icons[option]} alt="" />
+              <span>{option}</span>
+              {option === value && <Check size={15} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [unlocked, setUnlocked] = useState(
     () => !sitePassword || localStorage.getItem("plx-edit-unlocked") === "yes",
@@ -63,7 +125,13 @@ export default function App() {
     [saving, setSaving] = useState(false),
     [open, setOpen] = useState(false),
     [authOpen, setAuthOpen] = useState(false),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(""),
+    [confirmation, setConfirmation] = useState("");
+  useEffect(() => {
+    if (!confirmation) return;
+    const timer = window.setTimeout(() => setConfirmation(""), 4500);
+    return () => window.clearTimeout(timer);
+  }, [confirmation]);
   async function load() {
     if (!supabase) {
       setLoading(false);
@@ -146,6 +214,7 @@ export default function App() {
       ...f,
       class_name,
       race_name: CLASS_RACES[class_name][0],
+      role_name: CLASS_ROLES[class_name][0],
     }));
   }
   async function connectDiscord() {
@@ -160,19 +229,27 @@ export default function App() {
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!supabase || !unlocked) return;
+    if (!discordConnected) {
+      setDiscordError("connect discord before adding a preference");
+      return;
+    }
     setSaving(true);
     setMessage("");
-    const { error } = await supabase.from("guild_preferences").insert(form);
+    const { error } = await supabase
+      .from("guild_preferences")
+      .insert({ ...form, player_name: form.discord_name });
     setSaving(false);
     if (error) {
       setMessage(error.message);
       return;
     }
-    setMessage("preference added");
+    setOpen(false);
+    setConfirmation("preference added successfully");
     setForm({
       ...empty,
-      player_name: form.player_name,
       discord_name: form.discord_name,
+      discord_user_id: form.discord_user_id,
+      discord_avatar_url: form.discord_avatar_url,
       priority: Math.min(form.priority + 1, 3),
     });
     await load();
@@ -202,7 +279,7 @@ export default function App() {
               </>
             ) : (
               <>
-                <LockKeyhole size={15} /> editor login
+                <Plus size={15} /> add preference
               </>
             )}
           </button>
@@ -220,7 +297,7 @@ export default function App() {
             <div className="hero-actions">
               <button className="primary" onClick={requestEdit}>
                 {unlocked ? <Plus size={18} /> : <LockKeyhole size={18} />}{" "}
-                {unlocked ? "add preference" : "unlock editor"}
+                add preference
               </button>
               <a href="#roster">view roster</a>
             </div>
@@ -249,7 +326,7 @@ export default function App() {
             </div>
             <button className="outline" onClick={requestEdit}>
               {unlocked ? <Plus size={16} /> : <LockKeyhole size={16} />}{" "}
-              {unlocked ? "add preference" : "unlock editor"}
+              add preference
             </button>
           </div>
           {!configured && (
@@ -379,8 +456,8 @@ export default function App() {
             <span className="form-icon">
               <LockKeyhole />
             </span>
-            <span className="overline">editor access</span>
-            <h2>unlock roster</h2>
+            <span className="overline">guild access</span>
+            <h2>enter password</h2>
             <label>
               password
               <input
@@ -397,7 +474,7 @@ export default function App() {
             {passwordError && (
               <span className="form-error">incorrect password</span>
             )}
-            <button className="primary submit">unlock editor</button>
+            <button className="primary submit">continue</button>
           </form>
         </div>
       )}
@@ -416,22 +493,9 @@ export default function App() {
             >
               ×
             </button>
-            <span className="overline">roster editor</span>
+            <span className="overline">guild preference</span>
             <h2>add preference</h2>
-            <div className="fields two">
-              <label>
-                character
-                <input
-                  required
-                  minLength={2}
-                  maxLength={24}
-                  value={form.player_name}
-                  onChange={(e) =>
-                    setForm({ ...form, player_name: e.target.value })
-                  }
-                  placeholder="character name"
-                />
-              </label>
+            <div className="fields">
               <label>
                 discord profile
                 <button
@@ -452,27 +516,23 @@ export default function App() {
             <div className="fields two">
               <label>
                 class
-                <select
+                <IconSelect
                   value={form.class_name}
-                  onChange={(e) => pickClass(e.target.value)}
-                >
-                  {Object.keys(CLASS_RACES).map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
+                  options={Object.keys(CLASS_RACES)}
+                  icons={ICONS}
+                  onChange={pickClass}
+                  label="class"
+                />
               </label>
               <label>
                 race
-                <select
+                <IconSelect
                   value={form.race_name}
-                  onChange={(e) =>
-                    setForm({ ...form, race_name: e.target.value })
-                  }
-                >
-                  {CLASS_RACES[form.class_name].map((r) => (
-                    <option key={r}>{r}</option>
-                  ))}
-                </select>
+                  options={CLASS_RACES[form.class_name]}
+                  icons={RACE_ICONS}
+                  onChange={(race_name) => setForm({ ...form, race_name })}
+                  label="race"
+                />
               </label>
             </div>
             <div className="fields two">
@@ -484,7 +544,7 @@ export default function App() {
                     setForm({ ...form, role_name: e.target.value })
                   }
                 >
-                  {ROLES.map((r) => (
+                  {CLASS_ROLES[form.class_name].map((r) => (
                     <option key={r}>{r}</option>
                   ))}
                 </select>
@@ -538,6 +598,22 @@ export default function App() {
               {configured ? "add preference" : "supabase unavailable"}
             </button>
           </form>
+        </div>
+      )}
+      {confirmation && (
+        <div className="confirmation" role="status" aria-live="polite">
+          <CheckCircle2 size={20} />
+          <span>
+            <b>preference added</b>
+            saved to the guild roster
+          </span>
+          <button
+            type="button"
+            onClick={() => setConfirmation("")}
+            aria-label="Dismiss confirmation"
+          >
+            ×
+          </button>
         </div>
       )}
     </div>
