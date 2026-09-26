@@ -1,4 +1,4 @@
-# PLX Guild Roster
+# plx guild roster
 
 A public, collaborative World of Warcraft guild preference board built with React, Supabase, and Netlify.
 
