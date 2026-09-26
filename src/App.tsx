@@ -6,7 +6,8 @@ import {
   Crosshair,
   HeartPulse,
   Loader2,
-  LockKeyhole,
+  LogIn,
+  LogOut,
   Plus,
   Shield,
   Swords,
@@ -50,8 +51,6 @@ const empty = {
   availability: "Flexible",
   notes: "",
 };
-const sitePassword = import.meta.env.VITE_SITE_PASSWORD || "";
-
 function RoleIcon({ role, size = 16 }: { role: string; size?: number }) {
   if (role === "Tank") return <Shield size={size} />;
   if (role === "Healer") return <HeartPulse size={size} />;
@@ -112,19 +111,13 @@ function IconSelect({
 }
 
 export default function App() {
-  const [unlocked, setUnlocked] = useState(
-    () => !sitePassword || localStorage.getItem("plx-edit-unlocked") === "yes",
-  );
-  const [password, setPassword] = useState(""),
-    [passwordError, setPasswordError] = useState(false);
   const [discordConnected, setDiscordConnected] = useState(false);
-  const [discordError, setDiscordError] = useState("");
   const [rows, setRows] = useState<Pref[]>([]),
     [form, setForm] = useState(empty),
     [loading, setLoading] = useState(true),
     [saving, setSaving] = useState(false),
     [open, setOpen] = useState(false),
-    [authOpen, setAuthOpen] = useState(false),
+    [expandedPlayer, setExpandedPlayer] = useState<string | null>(null),
     [message, setMessage] = useState(""),
     [confirmation, setConfirmation] = useState("");
   useEffect(() => {
@@ -149,9 +142,20 @@ export default function App() {
     load();
     const client = supabase;
     if (!client) return;
-    client.auth.getUser().then(({ data }) => {
-      const user = data.user;
-      if (!user) return;
+    function applyDiscordUser(user: {
+      id: string;
+      user_metadata: Record<string, string>;
+    } | null) {
+      if (!user) {
+        setDiscordConnected(false);
+        setForm((f) => ({
+          ...f,
+          discord_name: "",
+          discord_user_id: "",
+          discord_avatar_url: "",
+        }));
+        return;
+      }
       const name =
         user.user_metadata.full_name ||
         user.user_metadata.name ||
@@ -164,7 +168,18 @@ export default function App() {
         discord_avatar_url: user.user_metadata.avatar_url || "",
       }));
       setDiscordConnected(true);
+      if (localStorage.getItem("plx-open-after-auth") === "yes") {
+        localStorage.removeItem("plx-open-after-auth");
+        setOpen(true);
+      }
+    }
+    client.auth.getUser().then(({ data }) => {
+      const user = data.user;
+      applyDiscordUser(user);
     });
+    const { data: authListener } = client.auth.onAuthStateChange(
+      (_event, session) => applyDiscordUser(session?.user || null),
+    );
     const channel = client
       .channel("roster")
       .on(
@@ -174,6 +189,7 @@ export default function App() {
       )
       .subscribe();
     return () => {
+      authListener.subscription.unsubscribe();
       client.removeChannel(channel);
     };
   }, []);
@@ -193,21 +209,35 @@ export default function App() {
     () => new Set(rows.map((r) => r.class_name)).size,
     [rows],
   );
+  const playerGroups = useMemo(() => {
+    const groups = new Map<string, Pref[]>();
+    rows.forEach((row) => {
+      const key = row.discord_user_id || row.discord_name.toLowerCase();
+      groups.set(key, [...(groups.get(key) || []), row]);
+    });
+    return [...groups.entries()].map(([key, preferences]) => ({
+      key,
+      preferences: preferences.sort((a, b) => a.priority - b.priority),
+    }));
+  }, [rows]);
+  const usedPriorities = useMemo(
+    () =>
+      rows
+        .filter((row) => row.discord_user_id === form.discord_user_id)
+        .map((row) => row.priority),
+    [rows, form.discord_user_id],
+  );
   function requestEdit() {
-    unlocked ? setOpen(true) : setAuthOpen(true);
-  }
-  function unlock(e: FormEvent) {
-    e.preventDefault();
-    if (password === sitePassword) {
-      localStorage.setItem("plx-edit-unlocked", "yes");
-      setUnlocked(true);
-      setPasswordError(false);
-      setAuthOpen(false);
-      setOpen(true);
-    } else {
-      setPasswordError(true);
-      setPassword("");
+    if (!discordConnected) return;
+    const nextPriority = [1, 2, 3].find(
+      (priority) => !usedPriorities.includes(priority),
+    );
+    if (!nextPriority) {
+      setConfirmation("you already have three preferences");
+      return;
     }
+    setForm((current) => ({ ...current, priority: nextPriority }));
+    setOpen(true);
   }
   function pickClass(class_name: string) {
     setForm((f) => ({
@@ -219,18 +249,26 @@ export default function App() {
   }
   async function connectDiscord() {
     if (!supabase) return;
-    setDiscordError("");
+    localStorage.setItem("plx-open-after-auth", "yes");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "discord",
       options: { redirectTo: window.location.origin },
     });
-    if (error) setDiscordError("discord connection is not configured yet");
+    if (error) {
+      localStorage.removeItem("plx-open-after-auth");
+      setConfirmation("discord sign-in could not be started");
+    }
+  }
+  async function disconnectDiscord() {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setOpen(false);
   }
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!supabase || !unlocked) return;
-    if (!discordConnected) {
-      setDiscordError("connect discord before adding a preference");
+    if (!supabase || !discordConnected) return;
+    if (usedPriorities.includes(form.priority)) {
+      setMessage("that preference order is already in use");
       return;
     }
     setSaving(true);
@@ -255,7 +293,7 @@ export default function App() {
     await load();
   }
   async function remove(id: string) {
-    if (!supabase || !unlocked) return;
+    if (!supabase || !discordConnected) return;
     await supabase.from("guild_preferences").delete().eq("id", id);
     await load();
   }
@@ -272,17 +310,24 @@ export default function App() {
         <nav>
           <a href="#roster">roster</a>
           <a href="#composition">composition</a>
-          <button className={unlocked ? "unlocked" : ""} onClick={requestEdit}>
-            {unlocked ? (
-              <>
+          {discordConnected ? (
+            <div className="account-actions">
+              <div className="discord-profile">
+                {form.discord_avatar_url && <img src={form.discord_avatar_url} alt="" />}
+                <span>{form.discord_name}</span>
+                <button onClick={disconnectDiscord} aria-label="Sign out">
+                  <LogOut size={14} />
+                </button>
+              </div>
+              <button className="unlocked" onClick={requestEdit}>
                 <Plus size={15} /> add preference
-              </>
-            ) : (
-              <>
-                <Plus size={15} /> add preference
-              </>
-            )}
-          </button>
+              </button>
+            </div>
+          ) : (
+            <button onClick={connectDiscord}>
+              <LogIn size={15} /> sign in with discord
+            </button>
+          )}
         </nav>
       </header>
       <main id="top">
@@ -295,10 +340,11 @@ export default function App() {
               <em>for pros.</em>
             </h1>
             <div className="hero-actions">
-              <button className="primary" onClick={requestEdit}>
-                {unlocked ? <Plus size={18} /> : <LockKeyhole size={18} />}{" "}
-                add preference
-              </button>
+              {discordConnected && (
+                <button className="primary" onClick={requestEdit}>
+                  <Plus size={18} /> add preference
+                </button>
+              )}
               <a href="#roster">view roster</a>
             </div>
           </div>
@@ -324,10 +370,11 @@ export default function App() {
               <span className="overline">guild planning</span>
               <h2>roster preferences</h2>
             </div>
-            <button className="outline" onClick={requestEdit}>
-              {unlocked ? <Plus size={16} /> : <LockKeyhole size={16} />}{" "}
-              add preference
-            </button>
+            {discordConnected && (
+              <button className="outline" onClick={requestEdit}>
+                <Plus size={16} /> add preference
+              </button>
+            )}
           </div>
           {!configured && (
             <div className="setup">
@@ -346,65 +393,67 @@ export default function App() {
             <div className="empty">
               <Users />
               <h3>no preferences yet</h3>
-              {unlocked && (
-                <button className="outline" onClick={() => setOpen(true)}>
+              {discordConnected && (
+                <button className="outline" onClick={requestEdit}>
                   add the first
                 </button>
               )}
             </div>
           ) : (
             <div className="roster">
-              {rows.map((r) => (
-                <article
-                  className="member"
-                  key={r.id}
-                  style={
-                    {
-                      "--class": CLASS_COLORS[r.class_name],
-                    } as React.CSSProperties
-                  }
-                >
-                  <div className="class-portrait">
-                    <img
-                      src={ICONS[r.class_name]}
-                      alt={`${r.class_name} icon`}
-                    />
-                    <span>{r.priority}</span>
-                  </div>
-                  <div className="identity">
-                    <small>
-                      {r.race_name} {r.class_name}
-                    </small>
-                    <h3>{r.player_name}</h3>
-                    {r.discord_name && (
-                      <p className="discord-line">
-                        {r.discord_avatar_url && (
-                          <img src={r.discord_avatar_url} alt="" />
-                        )}
-                        @{r.discord_name}
-                      </p>
-                    )}
-                  </div>
-                  <div className="role">
-                    <RoleIcon role={r.role_name} />
-                    <span>{r.role_name}</span>
-                  </div>
-                  <div className="availability">
-                    <small>availability</small>
-                    <span>{r.availability}</span>
-                  </div>
-                  {r.notes && <p className="notes">{r.notes}</p>}
-                  {unlocked && (
+              {playerGroups.map(({ key, preferences }) => {
+                const player = preferences[0];
+                const expanded = expandedPlayer === key;
+                return (
+                  <article className={`player-group ${expanded ? "expanded" : ""}`} key={key}>
                     <button
-                      className="delete"
-                      aria-label={`Remove ${r.player_name}'s preference`}
-                      onClick={() => remove(r.id)}
+                      className="player-summary"
+                      onClick={() => setExpandedPlayer(expanded ? null : key)}
+                      aria-expanded={expanded}
                     >
-                      <Trash2 size={16} />
+                      {player.discord_avatar_url ? (
+                        <img src={player.discord_avatar_url} alt="" />
+                      ) : (
+                        <span className="avatar-fallback">{player.discord_name.slice(0, 1)}</span>
+                      )}
+                      <span className="player-name">
+                        <b>{player.discord_name}</b>
+                        <small>{preferences.length} {preferences.length === 1 ? "preference" : "preferences"}</small>
+                      </span>
+                      <span className="class-stack">
+                        {preferences.map((preference) => (
+                          <img key={preference.id} src={ICONS[preference.class_name]} alt={preference.class_name} />
+                        ))}
+                      </span>
+                      <ChevronDown size={18} />
                     </button>
-                  )}
-                </article>
-              ))}
+                    {expanded && (
+                      <div className="preference-list">
+                        {preferences.map((r) => (
+                          <div className="preference-row" key={r.id}>
+                            <div className="class-portrait" style={{ "--class": CLASS_COLORS[r.class_name] } as React.CSSProperties}>
+                              <img src={ICONS[r.class_name]} alt={`${r.class_name} icon`} />
+                              <span>{r.priority}</span>
+                            </div>
+                            <div className="identity">
+                              <small>{r.race_name}</small>
+                              <h3>{r.class_name}</h3>
+                            </div>
+                            <div className="role"><RoleIcon role={r.role_name} /><span>{r.role_name}</span></div>
+                            <div className="availability"><small>availability</small><span>{r.availability}</span></div>
+                            {r.notes && <p className="notes">{r.notes}</p>}
+                            {discordConnected && r.discord_user_id === form.discord_user_id && (
+                              <button className="delete" aria-label={`Remove ${r.class_name} preference`} onClick={() => remove(r.id)}>
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>
@@ -438,46 +487,6 @@ export default function App() {
         <p>plx is for pros.</p>
         <span>not affiliated with blizzard entertainment</span>
       </footer>
-      {authOpen && (
-        <div
-          className="modal"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setAuthOpen(false);
-          }}
-        >
-          <form className="auth-form" onSubmit={unlock}>
-            <button
-              type="button"
-              className="close"
-              onClick={() => setAuthOpen(false)}
-            >
-              ×
-            </button>
-            <span className="form-icon">
-              <LockKeyhole />
-            </span>
-            <span className="overline">guild access</span>
-            <h2>enter password</h2>
-            <label>
-              password
-              <input
-                autoFocus
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setPasswordError(false);
-                }}
-                aria-invalid={passwordError}
-              />
-            </label>
-            {passwordError && (
-              <span className="form-error">incorrect password</span>
-            )}
-            <button className="primary submit">continue</button>
-          </form>
-        </div>
-      )}
       {open && (
         <div
           className="modal"
@@ -495,24 +504,6 @@ export default function App() {
             </button>
             <span className="overline">guild preference</span>
             <h2>add preference</h2>
-            <div className="fields">
-              <label>
-                discord profile
-                <button
-                  className={`discord-connect ${discordConnected ? "connected" : ""}`}
-                  type="button"
-                  onClick={connectDiscord}
-                >
-                  {discordConnected && form.discord_avatar_url ? (
-                    <img src={form.discord_avatar_url} alt="" />
-                  ) : (
-                    <span className="discord-mark">◉</span>
-                  )}
-                  {discordConnected ? form.discord_name : "connect discord"}
-                </button>
-                {discordError && <span className="inline-error">{discordError}</span>}
-              </label>
-            </div>
             <div className="fields two">
               <label>
                 class
@@ -558,7 +549,7 @@ export default function App() {
                   }
                 >
                   {[1, 2, 3].map((n) => (
-                    <option key={n} value={n}>
+                    <option key={n} value={n} disabled={usedPriorities.includes(n)}>
                       {n === 1 ? "1st choice" : n === 2 ? "2nd choice" : n === 3 ? "3rd choice" : `${n}th choice`}
                     </option>
                   ))}
@@ -604,8 +595,7 @@ export default function App() {
         <div className="confirmation" role="status" aria-live="polite">
           <CheckCircle2 size={20} />
           <span>
-            <b>preference added</b>
-            saved to the guild roster
+            <b>{confirmation}</b>
           </span>
           <button
             type="button"
