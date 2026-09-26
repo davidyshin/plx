@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
   Check,
+  BookOpen,
   ChevronDown,
   Crosshair,
   HeartPulse,
@@ -117,6 +118,7 @@ export default function App() {
     [loading, setLoading] = useState(true),
     [saving, setSaving] = useState(false),
     [open, setOpen] = useState(false),
+    [summaryOpen, setSummaryOpen] = useState(false),
     [expandedPlayer, setExpandedPlayer] = useState<string | null>(null),
     [message, setMessage] = useState(""),
     [confirmation, setConfirmation] = useState("");
@@ -345,6 +347,9 @@ export default function App() {
                   <Plus size={18} /> add preference
                 </button>
               )}
+              <button className="summary-link" onClick={() => setSummaryOpen(true)}>
+                <BookOpen size={17} /> availability summary
+              </button>
               <a href="#roster">view roster</a>
             </div>
           </div>
@@ -487,6 +492,40 @@ export default function App() {
         <p>plx is for pros.</p>
         <span>not affiliated with blizzard entertainment</span>
       </footer>
+      {summaryOpen && (
+        <div
+          className="modal"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setSummaryOpen(false);
+          }}
+        >
+          <section className="availability-summary" aria-modal="true" role="dialog">
+            <button type="button" className="close" onClick={() => setSummaryOpen(false)}>×</button>
+            <span className="overline">wow forever • horde</span>
+            <h2>class availability</h2>
+            <div className="availability-grid">
+              {Object.entries(CLASS_RACES).map(([className, races]) => (
+                <article key={className}>
+                  <div className="summary-class">
+                    <img src={ICONS[className]} alt="" />
+                    <b>{className}</b>
+                  </div>
+                  <div className="summary-races">
+                    {races.map((race) => (
+                      <span key={race}><img src={RACE_ICONS[race]} alt="" />{race}</span>
+                    ))}
+                  </div>
+                  <div className="summary-roles">
+                    {CLASS_ROLES[className].map((role) => (
+                      <span key={role}><RoleIcon role={role} size={13} />{role}</span>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
       {open && (
         <div
           className="modal"
