@@ -1,5 +1,7 @@
 # plx guild roster
 
+Hero artwork: “Orgrimmar: Horde Territory” by Leonardo a.C., featured by Blizzard in its community fan-art spotlight.
+
 A public, collaborative World of Warcraft guild preference board built with React, Supabase, and Netlify.
 
 ## Local setup

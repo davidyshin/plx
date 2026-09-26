@@ -4,6 +4,8 @@ create table if not exists public.guild_preferences (
   id uuid primary key default gen_random_uuid(),
   player_name text not null check (char_length(player_name) between 2 and 24),
   discord_name text not null default '' check (char_length(discord_name) <= 40),
+  discord_user_id text,
+  discord_avatar_url text,
   class_name text not null,
   race_name text not null,
   role_name text not null check (role_name in ('Tank','Healer','Melee DPS','Ranged DPS')),
