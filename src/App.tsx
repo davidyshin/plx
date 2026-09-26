@@ -173,7 +173,7 @@ export default function App() {
       ...empty,
       player_name: form.player_name,
       discord_name: form.discord_name,
-      priority: Math.min(form.priority + 1, 5),
+      priority: Math.min(form.priority + 1, 3),
     });
     await load();
   }
@@ -497,7 +497,7 @@ export default function App() {
                     setForm({ ...form, priority: +e.target.value })
                   }
                 >
-                  {[1, 2, 3, 4, 5].map((n) => (
+                  {[1, 2, 3].map((n) => (
                     <option key={n} value={n}>
                       {n === 1 ? "1st choice" : n === 2 ? "2nd choice" : n === 3 ? "3rd choice" : `${n}th choice`}
                     </option>

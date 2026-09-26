@@ -9,7 +9,7 @@ create table if not exists public.guild_preferences (
   class_name text not null,
   race_name text not null,
   role_name text not null check (role_name in ('Tank','Healer','Melee DPS','Ranged DPS')),
-  priority int not null default 1 check (priority between 1 and 5),
+  priority int not null default 1 check (priority between 1 and 3),
   availability text not null default 'Flexible',
   notes text not null default '' check (char_length(notes) <= 180),
   created_at timestamptz not null default now()

@@ -1,0 +1,10 @@
+project_id = "kqzburihdwxizwtkbtmw"
+
+[auth]
+site_url = "https://plxisforpros.com"
+additional_redirect_urls = ["https://plxisforpros.com/**", "https://www.plxisforpros.com/**", "https://**--plx-guild.netlify.app/**", "http://localhost:5173/**"]
+
+[auth.external.discord]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_DISCORD_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_DISCORD_SECRET)"
