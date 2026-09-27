@@ -12,6 +12,7 @@ import {
   Plus,
   Shield,
   Swords,
+  Shuffle,
   Trash2,
   Users,
 } from "lucide-react";
@@ -56,6 +57,7 @@ function RoleIcon({ role, size = 16 }: { role: string; size?: number }) {
   if (role === "Tank") return <Shield size={size} />;
   if (role === "Healer") return <HeartPulse size={size} />;
   if (role === "Melee DPS") return <Swords size={size} />;
+  if (role === "Flex") return <Shuffle size={size} />;
   return <Crosshair size={size} />;
 }
 

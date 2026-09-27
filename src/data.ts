@@ -19,7 +19,7 @@ export const CLASS_ROLES: Record<string, string[]> = {
   Shaman: ["Healer", "Melee DPS", "Ranged DPS"],
   Mage: ["Ranged DPS"],
   Warlock: ["Ranged DPS"],
-  Druid: ["Tank", "Healer", "Melee DPS", "Ranged DPS"],
+  Druid: ["Tank", "Healer", "Melee DPS", "Ranged DPS", "Flex"],
 };
 
 export const CLASS_COLORS: Record<string, string> = {
@@ -34,7 +34,7 @@ export const CLASS_COLORS: Record<string, string> = {
   Warrior: "#c69b6d",
 };
 
-export const ROLES = ["Tank", "Healer", "Melee DPS", "Ranged DPS"];
+export const ROLES = ["Tank", "Healer", "Melee DPS", "Ranged DPS", "Flex"];
 export const AVAILABILITY = ["Weeknights", "Weekends", "Late night", "Flexible"];
 
 export const ICONS: Record<string, string> = Object.fromEntries(
