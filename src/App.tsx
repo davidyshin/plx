@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   Check,
@@ -73,8 +73,24 @@ function IconSelect({
   label: string;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const selectRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!expanded) return;
+    function closeOnOutsidePress(event: PointerEvent) {
+      if (!selectRef.current?.contains(event.target as Node)) setExpanded(false);
+    }
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setExpanded(false);
+    }
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [expanded]);
   return (
-    <div className={`icon-select ${expanded ? "expanded" : ""}`}>
+    <div ref={selectRef} className={`icon-select ${expanded ? "expanded" : ""}`}>
       <button
         type="button"
         className="icon-select-trigger"
@@ -127,6 +143,22 @@ export default function App() {
     const timer = window.setTimeout(() => setConfirmation(""), 4500);
     return () => window.clearTimeout(timer);
   }, [confirmation]);
+  useEffect(() => {
+    function removeInjectedNetlifyBadge() {
+      document
+        .querySelectorAll<HTMLElement>(
+          'iframe[src*="netlify.com"], [data-netlify-drawer], [data-netlify-toolbar], #netlify-drawer, #netlify-toolbar, netlify-drawer, netlify-toolbar',
+        )
+        .forEach((element) => element.remove());
+      document.querySelectorAll<HTMLAnchorElement>('a[href*="netlify.com"]').forEach((link) => {
+        if (/powered by netlify/i.test(link.textContent || "")) link.remove();
+      });
+    }
+    removeInjectedNetlifyBadge();
+    const observer = new MutationObserver(removeInjectedNetlifyBadge);
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
   async function load() {
     if (!supabase) {
       setLoading(false);
@@ -589,9 +621,10 @@ export default function App() {
                 role
                 <select
                   value={form.role_name}
-                  onChange={(e) =>
-                    setForm({ ...form, role_name: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setForm({ ...form, role_name: e.target.value });
+                    e.currentTarget.blur();
+                  }}
                 >
                   {CLASS_ROLES[form.class_name].map((r) => (
                     <option key={r}>{r}</option>
@@ -602,9 +635,10 @@ export default function App() {
                 preference order
                 <select
                   value={form.priority}
-                  onChange={(e) =>
-                    setForm({ ...form, priority: +e.target.value })
-                  }
+                  onChange={(e) => {
+                    setForm({ ...form, priority: +e.target.value });
+                    e.currentTarget.blur();
+                  }}
                 >
                   {[1, 2, 3].map((n) => (
                     <option key={n} value={n} disabled={usedPriorities.includes(n)}>
@@ -618,9 +652,10 @@ export default function App() {
               availability
               <select
                 value={form.availability}
-                onChange={(e) =>
-                  setForm({ ...form, availability: e.target.value })
-                }
+                onChange={(e) => {
+                  setForm({ ...form, availability: e.target.value });
+                  e.currentTarget.blur();
+                }}
               >
                 {AVAILABILITY.map((a) => (
                   <option key={a}>{a}</option>

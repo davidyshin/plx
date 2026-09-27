@@ -10,6 +10,16 @@
 * {
   box-sizing: border-box;
 }
+iframe[src*="netlify.com"][title*="Netlify" i],
+[data-netlify-drawer],
+[data-netlify-toolbar],
+#netlify-drawer,
+#netlify-toolbar,
+netlify-drawer,
+netlify-toolbar {
+  display: none !important;
+  visibility: hidden !important;
+}
 html {
   scroll-behavior: smooth;
 }
