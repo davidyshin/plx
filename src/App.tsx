@@ -178,6 +178,9 @@ export default function App() {
     load();
     const client = supabase;
     if (!client) return;
+    const authClient = client;
+    const callbackError = new URLSearchParams(window.location.search).get("error_description");
+    if (callbackError) setConfirmation(`discord sign-in failed: ${callbackError}`);
     function applyDiscordUser(user: {
       id: string;
       user_metadata: Record<string, string>;
@@ -209,10 +212,17 @@ export default function App() {
         setOpen(true);
       }
     }
-    client.auth.getUser().then(({ data }) => {
-      const user = data.user;
-      applyDiscordUser(user);
-    });
+    async function restoreSession() {
+      const { data } = await authClient.auth.getSession();
+      applyDiscordUser(data.session?.user || null);
+      if (!data.session) {
+        window.setTimeout(async () => {
+          const retry = await authClient.auth.getSession();
+          if (retry.data.session) applyDiscordUser(retry.data.session.user);
+        }, 800);
+      }
+    }
+    restoreSession();
     const { data: authListener } = client.auth.onAuthStateChange(
       (_event, session) => applyDiscordUser(session?.user || null),
     );
