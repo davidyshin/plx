@@ -1,5 +1,18 @@
 local _, HT = ...
 HT.Protocol = {}
+function HT.Protocol.EncodeLocation(mapID, x, y)
+    if type(mapID) ~= "number" or mapID < 1 or mapID > 1000000
+        or type(x) ~= "number" or type(y) ~= "number" or x ~= x or y ~= y
+        or x < 0 or x > 1 or y < 0 or y > 1 then return end
+    return string.format("P|%d|%d|%d", mapID, math.floor(x * 10000 + 0.5), math.floor(y * 10000 + 0.5))
+end
+function HT.Protocol.ReceiveLocation(message, now)
+    if type(message) ~= "string" or #message > 40 then return end
+    local map, x, y = message:match("^P|(%d+)|(%d+)|(%d+)$")
+    map, x, y = tonumber(map), tonumber(x), tonumber(y)
+    if not map or map < 1 or map > 1000000 or x > 10000 or y > 10000 then return end
+    return {mapID = map, x = x / 10000, y = y / 10000, time = now}
+end
 function HT.Protocol.Encode(snapshot, serial)
     serial = tostring(serial)
     local ids, packets = {}, {}
@@ -44,7 +57,7 @@ function HT.Protocol.Receive(pending, message, sender, now)
         for record in body:gmatch("[^;]+;") do
             consumed = consumed .. record
             local id, status, xp, retention, mask, count, key = record:match(
-                "^(%d+):([ALTX]):(%-?%d+):(%d+):(%-?%d+):(%d+):(%d+);$")
+                "^(%d+):([ALTXCV]):(%-?%d+):(%d+):(%-?%d+):(%d+):(%d+);$")
             id, xp, retention, mask, count = tonumber(id), tonumber(xp), tonumber(retention), tonumber(mask), tonumber(count)
             key = tonumber(key)
             if not id or id < 1 or id > 10000000 or xp < -1 or xp > 10000000

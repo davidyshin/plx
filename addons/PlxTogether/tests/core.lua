@@ -31,7 +31,7 @@ local peer = {mapID = 1, level = 18, xpMax = 2000,
     quests = {[1] = {status = "L", xp = 100, retention = 1}}}
 local function receive(sender)
     for _, packet in ipairs(HT.Protocol.Encode(peer, 42)) do
-        frame.scripts.OnEvent(frame, "CHAT_MSG_ADDON", "PlxTogether3", packet, "PARTY", sender)
+        frame.scripts.OnEvent(frame, "CHAT_MSG_ADDON", "PlxTogether4", packet, "PARTY", sender)
     end
 end
 receive("Stranger")
@@ -68,3 +68,14 @@ partyName = nil
 HT.Scan(); assert(HT.me.name == "Just Evad-Realm", "Already joined names must stay intact")
 UnitName, C_PlayerInfo = nil, nil
 print("Forever first-name/surname identity tests passed.")
+
+partyName="Other Evad"
+frame.scripts.OnEvent(frame,"CHAT_MSG_ADDON","PlxTogether4","P|1|2500|7500","PARTY","Other Evad-Realm")
+assert(HT.locations["Other Evad-Realm"] and HT.locations["Other Evad-Realm"].x==0.25)
+frame.scripts.OnEvent(frame,"CHAT_MSG_ADDON","PlxTogether4","P|1|10001|0","PARTY","Other Evad-Realm")
+assert(HT.locations["Other Evad-Realm"].x==0.25,"Malformed position cannot replace valid data")
+frame.scripts.OnEvent(frame,"GROUP_ROSTER_UPDATE")
+partyName=nil
+frame.scripts.OnEvent(frame,"GROUP_ROSTER_UPDATE")
+assert(not HT.locations["Other Evad-Realm"],"Party departure clears location")
+print("Party location authentication and cleanup tests passed.")

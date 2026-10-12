@@ -29,3 +29,13 @@ LibStub={GetLibrary=function() return {GetZoneSize=function() return 1200,800 en
 local w,h=HT.Navigation.Dimensions(1); assert(w==1200 and h==800)
 LibStub=nil
 print("Navigation tests passed: cardinal directions, facing, map scale, arrival, stale/off-zone/missing positions, demo isolation.")
+
+local seconds, pace=HT.Navigation.TravelTime(700, 0)
+assert(seconds==100 and pace=="walking")
+seconds, pace=HT.Navigation.TravelTime(700, 14)
+assert(seconds==50 and pace=="current speed")
+GetUnitSpeed=function() return 14 end
+C_Map.GetMapWorldSize=function() return 1000,2000 end
+GetPlayerFacing=function() return 0 end
+assert(HT.Navigation.State().seconds==8, "Live ETA uses current speed")
+print("Travel time estimates passed.")

@@ -33,6 +33,7 @@ local distance, direction = label(-83, "GameFontNormalLarge"), label(-109)
 distance:ClearAllPoints(); distance:SetPoint("TOPLEFT", 88, -83); distance:SetWidth(226)
 direction:ClearAllPoints(); direction:SetPoint("TOPLEFT", 88, -109); direction:SetWidth(226)
 local arrow = {}
+local floatingETA
 local taskDivider = tracker:CreateTexture(nil, "ARTWORK")
 taskDivider:SetColorTexture(0.22,0.25,0.24,1); taskDivider:SetSize(298,1)
 for i = 1, 3 do
@@ -63,14 +64,19 @@ end
 function HT.RenderGPS()
     local state, reason = HT.Navigation.State()
     for _, line in ipairs(arrow) do line:SetShown(state ~= nil and not state.nearby) end
-    if not state then distance:SetText(db().arrowPopout and "-- yd" or "GPS paused"); direction:SetText(reason or "Position unavailable"); return end
+    if not state then distance:SetText(db().arrowPopout and "-- yd" or "GPS paused"); direction:SetText(reason or "Position unavailable"); floatingETA:SetText(""); return end
     if state.nearby then
         distance:SetText(db().arrowPopout and (math.floor(state.distance + 0.5) .. " yd") or "At the stop")
         direction:SetText(HT.demo and "Demo · advance with Next step" or "Complete the tasks below")
+        floatingETA:SetText("Arrived")
         return
     end
     distance:SetText(string.format("%s%d yd", HT.demo and "~" or "", math.floor(state.distance + 0.5)))
-    direction:SetText(HT.demo and "Simulated direction" or "Direct to stop · not a road route")
+    local minutes = math.floor(state.seconds / 60)
+    local seconds = state.seconds % 60
+    local eta = string.format("~%dm %02ds", minutes, seconds)
+    direction:SetText((HT.demo and "Simulated" or "Direct route") .. " · " .. eta .. " at " .. state.pace)
+    floatingETA:SetText(eta)
     local x, y = -math.sin(state.angle), math.cos(state.angle)
     local px, py = y, -x
     local segments = {{-18*x,-18*y,22*x,22*y}, {22*x,22*y,9*x+11*px,9*y+11*py}, {22*x,22*y,9*x-11*px,9*y-11*py}}
@@ -82,7 +88,7 @@ end
 local embeddedGPS, embeddedDistance, embeddedDirection, embeddedArrow = gps, distance, direction, arrow
 local popout = CreateFrame("Frame", "PlxTogetherArrow", UIParent, "BackdropTemplate")
 HT.arrowPopout = popout
-popout:SetSize(100,100); popout:SetPoint("CENTER",UIParent,"CENTER",0,160)
+popout:SetSize(140,112); popout:SetPoint("CENTER",UIParent,"CENTER",0,160)
 popout:SetFrameStrata("HIGH"); popout:SetClampedToScreen(true); popout:SetMovable(true)
 popout:EnableMouse(true); popout:RegisterForDrag("LeftButton")
 local floatingGPS = CreateFrame("Frame",nil,popout)
@@ -90,9 +96,11 @@ floatingGPS:SetSize(60,60); floatingGPS:SetPoint("TOP",0,-12)
 local floatingArrow = {}
 for i=1,3 do floatingArrow[i]=floatingGPS:CreateLine(nil,"OVERLAY"); floatingArrow[i]:SetThickness(5); floatingArrow[i]:SetColorTexture(0.93,0.78,0.51,1) end
 local floatingDistance=popout:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
-floatingDistance:SetPoint("TOP",0,-77); floatingDistance:SetWidth(100)
+floatingDistance:SetPoint("TOP",0,-73); floatingDistance:SetWidth(140)
 local floatingDirection=popout:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
 floatingDirection:Hide()
+floatingETA=popout:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+floatingETA:SetPoint("TOP",0,-94); floatingETA:SetWidth(140)
 popout:SetScript("OnDragStart",function() popout:StartMoving() end)
 popout:SetScript("OnDragStop",function()
     popout:StopMovingOrSizing(); local p,_,relative,x,y=popout:GetPoint(); db().arrowPosition={p,relative,x,y}
@@ -169,7 +177,7 @@ function HT.RenderTracker()
         layout()
         return
     end
-    current:SetText("STOP " .. index .. " · " .. HT.Planner.Title(stop))
+    current:SetText((stop.preparation and "PREP " or "STOP ") .. index .. " · " .. HT.Planner.Title(stop))
     local task = stop.tasks[1]
     local lines = {"|cffeac383" .. index .. ".1  " .. task.action:upper() .. "|r", HT.TaskInstruction(task),
         "|cff91b9b1Needed by: " .. HT.MemberNames(task.neededBy) .. "|r"}

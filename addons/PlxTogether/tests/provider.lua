@@ -24,8 +24,19 @@ C_QuestLog = {GetNumQuestLogEntries = function() return 1 end,
 assert(loadfile("addon/PlxTogether/Provider.lua"))("PlxTogether", HT)
 local snapshot = HT.Provider.Scan(1)
 assert(snapshot.count == 3 and snapshot.quests[1].status == "L", "Numeric zero is not complete")
-assert(snapshot.quests[2].status == "X", "Minimum level must be enforced")
+assert(snapshot.quests[2].status == "V", "Minimum level must be enforced")
 assert(snapshot.quests[3].xp == nil, "Missing XP must remain unknown")
 assert(snapshot.quests[1].doneMask == 0, "Forever 1/1 with false finished flag is unfinished")
 assert(#snapshot.catalog[1].objectives[1].points == 2, "Read objective spawn alternatives")
 print("Questie provider fixture tests passed.")
+
+C_QuestLog.IsQuestFlaggedCompleted=function(id) return id==2 end
+local completed=HT.Provider.Scan(1)
+assert(completed.quests[2].status=="C","Completed quest cannot be mistaken for a future unlock")
+C_QuestLog.IsQuestFlaggedCompleted=function() return false end
+db.IsDoable=function(id) return id~=2 end
+db.IsDoableVerbose=function(id) return "Level too low",true,26 end
+db.DoableStates={LEVEL_TOO_LOW=26}
+local levelBlocked=HT.Provider.Scan(1)
+assert(levelBlocked.quests[2].status=="X","Do not suggest quests more than two levels away")
+print("Completion and level-lock provider tests passed.")

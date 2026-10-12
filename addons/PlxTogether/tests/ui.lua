@@ -174,14 +174,29 @@ assert(not HT.arrowPopout:IsShown() and not PlxTogetherDB.arrowPopout)
 print("Navigation controls, names with spaces and detached GPS tests passed.")
 
 HT.ToggleArrowPopout(true)
-assert(HT.arrowPopout.width == 100 and HT.arrowPopout.height == 100, "Detached arrow uses a compact hit area")
+assert(HT.arrowPopout.width == 140 and HT.arrowPopout.height == 112, "Detached arrow uses a compact hit area")
 for _, child in ipairs(widgets) do
     if child.parent == HT.arrowPopout then
         assert(child.kind ~= "Button", "Detached GPS must not show a close button")
         if child.kind == "FontString" and child:IsShown() then
-            assert(child.text:find("yd",1,true), "Detached GPS shows distance only")
+            assert(child.text:find("yd",1,true) or child.text:find("m",1,true), "Detached GPS shows distance and ETA only")
         end
     end
 end
 HT.ToggleArrowPopout(false)
 print("Minimal detached GPS presentation tests passed.")
+
+HT.demo=nil; HT.me={mapID=1,time=100}; HT.error,HT.waiting=nil,nil
+HT.Rebuild=function() end
+HT.stops={{point={mapID=1,x=0.2,y=0.3},tasks={{action='Pick up',quest={id=1,name='Test'},neededBy={'Me-Realm'}}}}}
+HT.locations={['Friend-Realm']={mapID=1,x=0.35,y=0.4,time=100}}
+WorldMapFrame=widget(UIParent,"Frame","WorldMap"); WorldMapFrame.mapID,WorldMapFrame.canvasScale=1,1
+WorldMapFrame.ScrollContainer={Child=widget(WorldMapFrame,"Frame","Canvas")}
+WorldMapFrame.ScrollContainer.Child:SetSize(1000,800)
+HT.mapUpdater.scripts.OnUpdate(HT.mapUpdater,0.2)
+assert(HT.memberPins['Friend-Realm'] and HT.memberPins['Friend-Realm'].anchor:IsShown(),"Fresh party location appears on map")
+HT.locations['Friend-Realm'].time=80
+HT.mapUpdater.scripts.OnUpdate(HT.mapUpdater,0.2)
+assert(not HT.memberPins['Friend-Realm'].anchor:IsShown(),"Stale party location disappears")
+WorldMapFrame=nil
+print("Party map marker freshness tests passed.")

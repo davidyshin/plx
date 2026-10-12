@@ -160,7 +160,7 @@ local function showRouteCard(index, stop, number)
     if not card.meta then card.meta = label(card, "", "GameFontHighlightSmall", 52, -38, 394) end
     local offset = 22 + card.title:GetStringHeight()
     card.meta:ClearAllPoints(); card.meta:SetPoint("TOPLEFT", 52, -offset)
-    card.meta:SetText(string.format("%s · %d substep%s · %.1f, %.1f", active and "GPS TARGET" or "CLICK TO TARGET",
+    card.meta:SetText(string.format("%s · %d substep%s · %.1f, %.1f", stop.preparation and "UNLOCK SHARED ROUTE" or (active and "GPS TARGET" or "CLICK TO TARGET"),
         #stop.tasks, #stop.tasks == 1 and "" or "s", stop.point.x*100, stop.point.y*100))
     card.meta:SetTextColor(0.67, 0.72, 0.75); card.meta:Show()
     offset = offset + card.meta:GetStringHeight() + 16
@@ -216,19 +216,26 @@ render = function()
     for _, member in ipairs(members) do
         local displayName = member == HT.me and "You" or member.name:match("^[^-]+")
         local state = demo and "Demo" or (GetTime() - member.time <= 90 and "Ready" or "Stale")
-        statuses[#statuses + 1] = displayName .. " · Lv. " .. member.level .. " · " .. state
+        local coordinates = ""
+        if member == HT.me and C_Map.GetPlayerMapPosition then
+            local pos = C_Map.GetPlayerMapPosition(member.mapID, "player")
+            if pos then coordinates = string.format(" · %.1f, %.1f", pos.x * 100, pos.y * 100) end
+        end
+        statuses[#statuses + 1] = displayName .. " · Lv. " .. member.level .. " · " .. state .. coordinates
     end
     if not demo then
         for i = 1, 4 do
-            local name, realm = UnitFullName("party" .. i)
-            if name then
-                local full = name .. "-" .. ((realm and realm ~= "") and realm or GetNormalizedRealmName())
+            local full = HT.UnitName("party" .. i)
+            if full then
                 local peer = HT.peers[full]
                 local state = "Waiting"
                 if peer and GetTime() - peer.time <= 90 then
                     state = HT.me and peer.mapID == HT.me.mapID and "Ready" or "Other zone"
                 end
-                statuses[#statuses + 1] = name .. " · " .. state
+                local location = HT.locations and HT.locations[full]
+                local position = location and GetTime() - location.time <= 15
+                    and string.format(" · %.1f, %.1f", location.x * 100, location.y * 100) or ""
+                statuses[#statuses + 1] = HT.MemberNames({full}) .. " · " .. state .. position
             end
         end
     end
@@ -271,6 +278,20 @@ render = function()
                 or "Some quests may be locked, completed, missing XP, or outside this zone. Check your quest log and the notes below.", true)
         end
         if #(HT.notes or {}) > 0 then card("Check your quest log", table.concat(HT.notes, "\n"), false) end
+        if #(HT.future or {}) > 0 then
+            local recommendation = HT.future[1]
+            local lines = {"Potential shared route: " .. recommendation.quest.name}
+            for _, need in ipairs(recommendation.needs) do
+                local parts = {}
+                if need.levels > 0 then parts[#parts + 1] = need.levels .. " level" .. (need.levels == 1 and "" or "s") end
+                for _, step in ipairs(need.steps) do
+                    parts[#parts + 1] = step.name .. (step.uncertain and " (check chain)" or "")
+                end
+                lines[#lines + 1] = HT.MemberNames({need.name}) .. ": " .. table.concat(parts, " + ")
+            end
+            lines[#lines + 1] = "Possible unlock; Questie and the quest giver confirm availability. Current stops remain playable."
+            card("A BETTER ROUTE MAY BE CLOSE", table.concat(lines, "\n"), false)
+        end
         if #(HT.ranked or {}) > 0 then
             card("XP FOR EVERYONE", "Estimated quest rewards for each player. The route gives extra weight to the lowest individual benefit.", false)
             for i = 1, math.min(8, #HT.ranked) do

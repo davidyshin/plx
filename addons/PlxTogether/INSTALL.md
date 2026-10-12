@@ -1,6 +1,6 @@
 # Install PlxTogether for WoW Forever
 
-You need **PlxTogether-0.5.0.zip**. Your friend should send you that ZIP along with this guide.
+You need **PlxTogether-0.6.0.zip**. Your friend should send you that ZIP along with this guide.
 
 ## 1. Find your Forever game folder
 
@@ -23,7 +23,7 @@ the Forever beta; the live release may use a different client folder.
 
 ## 2. Extract the addon
 
-Close WoW. Extract **PlxTogether-0.5.0.zip**, then copy the extracted **PlxTogether**
+Close WoW. Extract **PlxTogether-0.6.0.zip**, then copy the extracted **PlxTogether**
 folder into `Interface/AddOns`.
 
 The final layout must look like this:
@@ -65,7 +65,7 @@ demo without Questie. Everyone in the party needs both addons for live shared ro
 5. Click **Next step** to preview the route. Click **Exit demo** or type **`/plx live`**
    when you are ready to use your real character.
 
-PlxTogether 0.5.0 targets interface **16001**. A later beta build may mark it out of
+PlxTogether 0.6.0 targets interface **16001**. A later beta build may mark it out of
 date. Check for an updated addon first; enabling out-of-date addons does not guarantee
 compatibility with a changed client.
 
@@ -102,7 +102,7 @@ the error text, PlxTogether version, and game build to the person testing the ad
 This is a beta addon. Quest XP estimates and live map behavior still need in-game
 validation.
 
-## On-screen route tracker (0.5.0)
+## On-screen route tracker (0.6.0)
 
 The small PlxTogether tracker stays visible while the large Details window is closed. Drag it to move it. It shows your current stop, map coordinates, who needs the tasks, and the next two stops. Details opens the full route; Map opens the live zone map.
 
@@ -112,7 +112,7 @@ To preview solo, run `/plx demo`, close Details, and use **Next step** on the tr
 
 The route uses approximate map locations, not terrain-aware navigation. Forever beta XP rules and the new tracker still need verification in the game client.
 
-## Version 0.5.0
+## Version 0.6.0
 
 - The direction arrow points to the next stop, updates as you turn, and shows approximate yards. It is direct compass guidance, not terrain-aware navigation. At the stop does not complete a quest.
 - Route stops contain separate action-labelled substeps (1.1, 1.2), dividers, and Needed by lists. Click a live map pin to open that stop's instructions.

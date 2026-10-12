@@ -1,4 +1,4 @@
-# PlxTogether 0.5.0
+# PlxTogether 0.6.0
 
 Horde party quest planner prototype for WoW Forever beta. Requires a current
 Forever-compatible Questie on every member's client. Not yet tested inside WoW.
@@ -22,7 +22,7 @@ For help in WoW, click **Guide** or type `/plx guide`. See `GUIDE.md` for a stan
 quick start.
 
 
-Extract `PlxTogether-0.5.0.zip` into `_classic_beta_/Interface/AddOns/`, alongside
+Extract `PlxTogether-0.6.0.zip` into `_classic_beta_/Interface/AddOns/`, alongside
 Questie. The result must be `AddOns/PlxTogether/PlxTogether.toc`. Reload the UI.
 Install this version on every member's client. The manifest targets interface 16001.
 
@@ -135,10 +135,10 @@ map zoom and a real two-player party, then compare actual XP. Automated fixture
 checks cannot guarantee that a beta client has no bugs.
 An independent database and optional local-model/Gemini companion can follow.
 
-## Version 0.5.0
+## Version 0.6.0
 
 - The direction arrow points to the next stop, updates as you turn, and shows approximate yards. It is direct compass guidance, not terrain-aware navigation. At the stop does not complete a quest.
 - Route stops contain separate action-labelled substeps (1.1, 1.2), dividers, and Needed by lists. Click a live map pin to open that stop's instructions.
 - SOLO MODE is your real character. PARTY MODE is your real party. DEMO · SIMULATED is the fictional test, with an Exit demo button on the tracker. /plx live leaves the demo.
 - The complete friends ZIP includes PlxTogether-Setup.exe, a Windows installer with the Paddington logo and game-folder selection. Extract the entire ZIP before launching it; keep the executable beside the Support and AddOns folders. The source checkout is not an installable friends package.
-- Website previews are interactive illustrations using sample data, not screenshots of a running game.
+- The website has interactive illustrations and a gallery of actual WoW screenshots.

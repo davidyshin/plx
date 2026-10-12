@@ -30,3 +30,16 @@ local empty = {mapID = 1, level = 15, xpMax = 10000, quests = {}}
 for _, packet in ipairs(HT.Protocol.Encode(empty, 7)) do result = HT.Protocol.Receive(pending, packet, "Peer", 100) end
 assert(result and result.count == 0, "An empty zone snapshot is valid")
 print("Party protocol tests passed.")
+
+local pointPacket = HT.Protocol.EncodeLocation(1, 0.23456, 0.8)
+local point = HT.Protocol.ReceiveLocation(pointPacket, 123)
+assert(point and point.mapID == 1 and math.abs(point.x - 0.2346) < 0.00001 and point.time == 123)
+for _, bad in ipairs({"P|1|10001|0", "P|1|-1|0", "P|0|0|0", "P|1|abc|0", "P|1|0|0|extra"}) do
+    assert(not HT.Protocol.ReceiveLocation(bad, 123), "Reject malformed party coordinates")
+end
+assert(not HT.Protocol.EncodeLocation(1, 2, 0))
+local done = {mapID=1,level=15,xpMax=10000,quests={[5]={status="C"},[6]={status="V",xp=500}}}
+local restored
+for _, packet in ipairs(HT.Protocol.Encode(done, 8)) do restored=HT.Protocol.Receive(pending,packet,"Peer",100) or restored end
+assert(restored.quests[5].status=="C" and restored.quests[6].status=="V")
+print("Location and unlock-state protocol tests passed.")

@@ -12,3 +12,7 @@ Manual installation (including macOS): copy the folders inside AddOns into
 your game's Interface/AddOns folder. Leave your WTF folder unchanged.
 
 Support contains files used by setup. You do not need to open them.
+
+Details also shows possible stronger routes after short quest-chain or level gaps.
+The GPS time is approximate. Blue map dots show recent positions from party members
+running the same version of PlxTogether.

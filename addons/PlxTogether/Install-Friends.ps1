@@ -5,7 +5,7 @@ try {
     if ((Split-Path $PSScriptRoot -Leaf) -eq 'Support') { $packageRoot = Split-Path $PSScriptRoot -Parent }
     $source = Join-Path $packageRoot 'AddOns'
     if (-not (Test-Path -LiteralPath "$source\PlxTogether\PlxTogether.toc") -or -not (Test-Path -LiteralPath "$source\Questie") -or -not (Test-Path -LiteralPath "$source\QuestieDB")) {
-        throw 'This is not the complete installer package. Download PlxTogether-Friends.zip from https://github.com/davidyshin/plx/releases/tag/plxtogether-v0.5.0 (not Source code), extract the whole ZIP, and run the installer beside its AddOns folder. If using the source repository, first run Build-Friends-Bundle.ps1, then extract dist\PlxTogether-Friends.zip.'
+        throw 'This is not the complete installer package. Download PlxTogether-Friends.zip from https://github.com/davidyshin/plx/releases/tag/plxtogether-v0.6.0 (not Source code), extract the whole ZIP, and run the installer beside its AddOns folder. If using the source repository, first run Build-Friends-Bundle.ps1, then extract dist\PlxTogether-Friends.zip.'
     }
     if (-not $ClientPath) {
         $default = 'C:\Program Files (x86)\World of Warcraft\_classic_beta_'

@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 [assembly: AssemblyTitle("PlxTogether Setup")]
-[assembly: AssemblyVersion("0.5.0.0")]
+[assembly: AssemblyVersion("0.6.0.0")]
 internal static class Program {
     internal static string Quote(string value) {
         var result = new StringBuilder("\""); int slashes = 0;
@@ -70,7 +70,7 @@ internal sealed class SetupForm : Form {
         }
         TextLabel("PlxTogether",104,26,440,35,22,gold);
         TextLabel("Quest as a party. Or follow your own route.",106,65,440,26,10,muted);
-        TextLabel("PlxTogether 0.5.0 + Questie + QuestieDB",28,111,544,30,12,Color.White);
+        TextLabel("PlxTogether 0.6.0 + Questie + QuestieDB",28,111,544,30,12,Color.White);
         TextLabel("No downloads needed. Existing addon folders are backed up before updates.",28,148,544,45,10,muted);
         TextLabel("FOREVER CLIENT FOLDER",28,207,544,24,9,gold);
         folder.SetBounds(28,237,424,30); folder.Text=@"C:\Program Files (x86)\World of Warcraft\_classic_beta_";

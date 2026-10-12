@@ -10,7 +10,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Argument test compilation failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Argument tests failed' }
 $exe = Join-Path $output 'PlxTogether-Setup.exe'
 $assembly = [Reflection.AssemblyName]::GetAssemblyName($exe)
-if ($assembly.Version.ToString() -ne '0.5.0.0') { throw 'Incorrect executable version' }
+if ($assembly.Version.ToString() -ne '0.6.0.0') { throw 'Incorrect executable version' }
 $data = [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($exe))
 if (-not $data.Contains('requireAdministrator') -or -not $data.Contains('PlxTogether.Logo')) { throw 'Installer is missing its elevation manifest or logo resource' }
 Write-Host 'Executable checks passed: compilation, version, elevation manifest, logo resource.'

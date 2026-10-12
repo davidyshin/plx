@@ -1,9 +1,30 @@
 local _, HT = ...
-local pins, links, elapsed = {}, {}, 0
+local pins, links, memberPins, elapsed = {}, {}, {}, 0
 HT.mapPins = pins
+HT.memberPins = memberPins
 local function hideAll()
     for _, pin in ipairs(pins) do pin.anchor:Hide() end
     for _, line in ipairs(links) do line:Hide() end
+    for _, pin in pairs(memberPins) do pin.anchor:Hide() end
+end
+local function createMemberPin(canvas)
+    local anchor = CreateFrame("Frame", nil, canvas)
+    anchor:SetSize(1,1)
+    local pin = CreateFrame("Button", nil, anchor)
+    pin.anchor = anchor
+    pin:SetFrameStrata("HIGH"); pin:SetSize(25,25); pin:SetPoint("CENTER")
+    pin.disk = pin:CreateTexture(nil,"BACKGROUND"); pin.disk:SetAllPoints()
+    pin.disk:SetTexture("Interface\\AddOns\\PlxTogether\\Media\\route-pin.tga")
+    pin.disk:SetVertexColor(0.42,0.76,1)
+    pin.text = pin:CreateFontString(nil,"OVERLAY","GameFontNormalSmall"); pin.text:SetPoint("CENTER")
+    pin:SetScript("OnEnter",function(self)
+        GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+        GameTooltip:SetText(HT.MemberNames({self.memberName}))
+        GameTooltip:AddLine("Party location · " .. string.format("%.1f, %.1f",self.location.x*100,self.location.y*100),0.5,0.8,1)
+        GameTooltip:Show()
+    end)
+    pin:SetScript("OnLeave",function() GameTooltip:Hide() end)
+    return pin
 end
 local function createPin(canvas)
     local anchor = CreateFrame("Frame", nil, canvas)
@@ -18,7 +39,7 @@ local function createPin(canvas)
     pin.badge:SetText("NEXT")
     pin:SetScript("OnEnter",function(self)
         GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-        GameTooltip:SetText("PlxTogether · Stop " .. self.index .. (self.index == 1 and " · NEXT" or ""))
+        GameTooltip:SetText("PlxTogether · Stop " .. self.index .. (self.index == HT.ActiveStopIndex() and " · GPS TARGET" or ""))
         for i, task in ipairs(self.stop.tasks) do
             if i > 1 then GameTooltip:AddLine(" ") end
             GameTooltip:AddLine(self.index .. "." .. i .. "  " .. task.action:upper() .. " · " .. task.quest.name,1,0.82,0.5,true)
@@ -75,4 +96,20 @@ updater:SetScript("OnUpdate",function(_,delta)
     -- Keep active pins visible; repeatedly hiding them dismisses hovered tooltips.
     for i=count+1,#pins do pins[i].anchor:Hide() end
     for i=math.max(1,count),#links do links[i]:Hide() end
+    for name, location in pairs(HT.locations or {}) do
+        local pin = memberPins[name]
+        if location.mapID == mapID and GetTime() - location.time <= 15 then
+            if not pin then pin=createMemberPin(canvas); memberPins[name]=pin end
+            pin.memberName, pin.location = name, location
+            pin:SetFrameLevel(canvas:GetFrameLevel()+999)
+            pin:SetScale(1/scale)
+            pin.text:SetText(HT.MemberNames({name}):sub(1,1))
+            pin.anchor:ClearAllPoints()
+            pin.anchor:SetPoint("CENTER",canvas,"TOPLEFT",location.x*canvas:GetWidth(),-location.y*canvas:GetHeight())
+            pin.anchor:Show()
+        elseif pin then pin.anchor:Hide() end
+    end
+    for name, pin in pairs(memberPins) do
+        if not HT.locations or not HT.locations[name] then pin.anchor:Hide() end
+    end
 end)

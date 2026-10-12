@@ -1,6 +1,6 @@
 local _, HT = ...
-HT.peers, HT.queue, HT.catalog, HT.stops = {}, {}, {}, {}
-local PREFIX = "PlxTogether3"
+HT.peers, HT.queue, HT.catalog, HT.stops, HT.locations = {}, {}, {}, {}, {}
+local PREFIX = "PlxTogether4"
 local function name(unit)
     local n, realm = UnitFullName(unit)
     -- Forever exposes first name and surname separately through UnitName.
@@ -15,6 +15,7 @@ local function name(unit)
     if not n then return end
     return n .. "-" .. ((realm and realm ~= "") and realm or GetNormalizedRealmName())
 end
+HT.UnitName = name
 function HT.CreateButton(parent)
     local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
     b:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
@@ -83,6 +84,7 @@ function HT.Rebuild()
         else members[#members + 1] = {name = n, ready = false} end
     end
     HT.ranked, HT.waiting = HT.Planner.Rank(HT.catalog, members, GetTime())
+    HT.future = HT.waiting and {} or HT.Planner.LookAhead(HT.catalog, members, HT.ranked)
     local keys = {tostring(HT.me.mapID)}
     for _, row in ipairs(HT.ranked) do
         keys[#keys + 1] = tostring(row.quest.id)
@@ -100,10 +102,20 @@ function HT.Rebuild()
         end
     end
     keys[#keys + 1] = HT.waiting or ""
+    for _, suggestion in ipairs(HT.future or {}) do
+        keys[#keys + 1] = tostring(suggestion.quest.id)
+        for _, need in ipairs(suggestion.needs) do
+            keys[#keys + 1] = need.name .. ":" .. need.levels
+            for _, step in ipairs(need.steps) do keys[#keys + 1] = tostring(step.id) .. ":" .. step.status end
+        end
+    end
     local key = table.concat(keys, "|")
     if key ~= HT.routeKey then
         local pos = C_Map.GetPlayerMapPosition(HT.me.mapID, "player")
         HT.stops, HT.notes = HT.Planner.Stops(HT.ranked, HT.me.mapID, pos and pos.x, pos and pos.y)
+        local prep = HT.Planner.Preparation(HT.future[1], HT.catalog, members, HT.me.mapID,
+            pos and pos.x, pos and pos.y, HT.ranked)
+        for i = #prep, 1, -1 do table.insert(HT.stops, 1, prep[i]) end
         HT.routeKey = key
         HT.selectedStop = 1
     end
@@ -144,6 +156,11 @@ local function receive(message, sender)
     if HT.demo or type(sender) ~= "string" then return end
     if not sender:find("-", 1, true) then sender = sender .. "-" .. GetNormalizedRealmName() end
     if not roster()[sender] then return end
+    if message:sub(1, 2) == "P|" then
+        local location = HT.Protocol.ReceiveLocation(message, GetTime())
+        if location then HT.locations[sender] = location end
+        return
+    end
     HT.pending = HT.pending or {}
     local peer = HT.Protocol.Receive(HT.pending, message, sender, GetTime())
     if peer then
@@ -242,18 +259,28 @@ frame:SetScript("OnEvent", function(_, event, ...)
             HT.queue, HT.nextSnapshot = {}, nil
             local current = roster()
             for n in pairs(HT.peers) do if not current[n] then HT.peers[n] = nil end end
+            for n in pairs(HT.locations) do if not current[n] then HT.locations[n] = nil end end
             HT.Rebuild()
         end
         HT.dirty = true
     end
 end)
-local elapsed, scanElapsed = 0, 30
+local elapsed, scanElapsed, locationElapsed = 0, 30, 5
 frame:SetScript("OnUpdate", function(_, delta)
     if HT.demo then return end
-    elapsed, scanElapsed = elapsed + delta, scanElapsed + delta
+    elapsed, scanElapsed, locationElapsed = elapsed + delta, scanElapsed + delta, locationElapsed + delta
     if elapsed < 0.2 then return end
     elapsed = 0
     if #HT.queue > 0 then C_ChatInfo.SendAddonMessage(PREFIX, table.remove(HT.queue, 1), "PARTY") end
+    if locationElapsed >= 5 then
+        locationElapsed = 0
+        if IsInGroup() and not IsInRaid() and HT.me then
+            local map = C_Map.GetBestMapForUnit("player")
+            local pos = map and C_Map.GetPlayerMapPosition(map, "player")
+            local packet = map and pos and HT.Protocol.EncodeLocation(map, pos.x, pos.y)
+            if packet then C_ChatInfo.SendAddonMessage(PREFIX, packet, "PARTY") end
+        end
+    end
     if #HT.queue == 0 and HT.nextSnapshot then broadcast(HT.nextSnapshot) end
     if scanElapsed >= 30 or (HT.dirty and scanElapsed >= 5) then
         scanElapsed, HT.dirty = 0, false

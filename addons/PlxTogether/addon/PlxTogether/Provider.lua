@@ -102,12 +102,31 @@ function HT.Provider.Scan(mapID)
             local start = point(db.QueryQuestSingle(id, "startedBy"))
             local finish = point(db.QueryQuestSingle(id, "finishedBy"))
             catalog[id] = {id = id, name = db.QueryQuestSingle(id, "name") or tostring(id),
-                level = db.QueryQuestSingle(id, "questLevel"), start = start, finish = finish}
+                level = db.QueryQuestSingle(id, "questLevel"), start = start, finish = finish,
+                requiredLevel = db.QueryQuestSingle(id, "requiredLevel") or 1,
+                requiredMaxLevel = db.QueryQuestSingle(id, "requiredMaxLevel"),
+                preQuestGroup = db.QueryQuestSingle(id, "preQuestGroup"),
+                preQuestSingle = db.QueryQuestSingle(id, "preQuestSingle")}
             local minimum = db.QueryQuestSingle(id, "requiredLevel") or 1
             local maximum = db.QueryQuestSingle(id, "requiredMaxLevel")
             local levelOK = UnitLevel("player") >= minimum
                 and (not maximum or maximum == 0 or UnitLevel("player") <= maximum)
-            local available = log[id] or (levelOK and db.IsDoable(id) and "A" or "X")
+            local completed = false
+            if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
+                local ok, result = pcall(C_QuestLog.IsQuestFlaggedCompleted, id)
+                completed = ok and result == true
+            end
+            if not completed and compat and compat.IsQuestFlaggedCompleted then
+                local ok, result = pcall(compat.IsQuestFlaggedCompleted, id)
+                completed = ok and result == true
+            end
+            local doable = not completed and db.IsDoable(id)
+            local available = log[id] or (completed and "C" or (doable and (levelOK and "A" or "V") or "X"))
+            if available == "X" and not levelOK and minimum - UnitLevel("player") <= 2
+                and db.IsDoableVerbose and db.DoableStates then
+                local ok, _, _, reason = pcall(db.IsDoableVerbose, id, false, true, true)
+                if ok and reason == db.DoableStates.LEVEL_TOO_LOW then available = "V" end
+            end
             local reward, retention
             local raw = xp.db[id]
             if raw and raw[1] > 0 and raw[2] > 0 then
@@ -116,6 +135,9 @@ function HT.Provider.Scan(mapID)
                 retention = math.max(0.1, math.min(1, (2 * (raw[1] - UnitLevel("player")) + 20) / 10))
             end
             states[id] = {status = available, xp = reward, retention = retention}
+            if (not reward or reward <= 0) and raw and raw[2] and raw[2] > 0 then
+                states[id].xp = math.floor(raw[2] * (retention or 1))
+            end
             if log[id] then
                 local quest = db.GetQuest(id)
                 local key = objectiveKey(quest and quest.ObjectiveData)
@@ -157,7 +179,50 @@ function HT.Provider.Scan(mapID)
                 end
             end
             count = count + 1
-            if count >= 300 then break end
+            if count >= 270 then break end
+        end
+    end
+    -- Include nearby chain prerequisites even when they belong to another zone.
+    -- Their status is needed for an honest short-chain suggestion, never a live stop.
+    local queue, seen = {}, {}
+    local zoneIDs = {}
+    for id in pairs(catalog) do zoneIDs[#zoneIDs + 1] = id end
+    table.sort(zoneIDs)
+    for _, id in ipairs(zoneIDs) do
+        local quest = catalog[id]
+        if not quest.prerequisiteOnly then
+            for _, prereq in ipairs(quest.preQuestGroup or {}) do queue[#queue + 1] = {prereq, 1} end
+            for _, prereq in ipairs(quest.preQuestSingle or {}) do queue[#queue + 1] = {prereq, 1} end
+        end
+    end
+    local head = 1
+    while head <= #queue and count < 300 do
+        local id, depth = queue[head][1], queue[head][2]
+        head = head + 1
+        if type(id) == "number" and id > 0 and not seen[id] then
+            seen[id] = true
+            if not catalog[id] and db.QuestPointers[id] then
+                local group = db.QueryQuestSingle(id, "preQuestGroup")
+                local single = db.QueryQuestSingle(id, "preQuestSingle")
+                catalog[id] = {id = id, name = db.QueryQuestSingle(id, "name") or tostring(id),
+                    prerequisiteOnly = true, requiredLevel = db.QueryQuestSingle(id, "requiredLevel") or 1,
+                    preQuestGroup = group, preQuestSingle = single}
+                local completed = false
+                if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
+                    local ok, result = pcall(C_QuestLog.IsQuestFlaggedCompleted, id)
+                    completed = ok and result == true
+                end
+                if not completed and compat and compat.IsQuestFlaggedCompleted then
+                    local ok, result = pcall(compat.IsQuestFlaggedCompleted, id)
+                    completed = ok and result == true
+                end
+                states[id] = {status = log[id] or (completed and "C" or "X")}
+                count = count + 1
+                if depth < 2 then
+                    for _, prereq in ipairs(group or {}) do queue[#queue + 1] = {prereq, depth + 1} end
+                    for _, prereq in ipairs(single or {}) do queue[#queue + 1] = {prereq, depth + 1} end
+                end
+            end
         end
     end
     return {catalog = catalog, quests = states, mapID = mapID,
