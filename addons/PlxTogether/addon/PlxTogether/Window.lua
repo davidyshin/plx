@@ -72,7 +72,7 @@ guidance:SetTextColor(0.67, 0.72, 0.76)
 local footer = label(window, "", "GameFontHighlightSmall", 24, -606, 480)
 footer:SetTextColor(0.55, 0.6, 0.66)
 local function button(text, x, width, callback)
-    local b = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
+    local b = HT.CreateButton(window)
     b:SetPoint("BOTTOMLEFT", x, 45); b:SetSize(width, 27)
     b:SetText(text); b:SetScript("OnClick", callback)
     return b

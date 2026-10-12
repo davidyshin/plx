@@ -63,9 +63,9 @@ end
 function HT.RenderGPS()
     local state, reason = HT.Navigation.State()
     for _, line in ipairs(arrow) do line:SetShown(state ~= nil and not state.nearby) end
-    if not state then distance:SetText("GPS paused"); direction:SetText(reason or "Position unavailable"); return end
+    if not state then distance:SetText(db().arrowPopout and "-- yd" or "GPS paused"); direction:SetText(reason or "Position unavailable"); return end
     if state.nearby then
-        distance:SetText("At the stop")
+        distance:SetText(db().arrowPopout and (math.floor(state.distance + 0.5) .. " yd") or "At the stop")
         direction:SetText(HT.demo and "Demo · advance with Next step" or "Complete the tasks below")
         return
     end
@@ -82,21 +82,17 @@ end
 local embeddedGPS, embeddedDistance, embeddedDirection, embeddedArrow = gps, distance, direction, arrow
 local popout = CreateFrame("Frame", "PlxTogetherArrow", UIParent, "BackdropTemplate")
 HT.arrowPopout = popout
-popout:SetSize(190,130); popout:SetPoint("CENTER",UIParent,"CENTER",0,160)
+popout:SetSize(100,100); popout:SetPoint("CENTER",UIParent,"CENTER",0,160)
 popout:SetFrameStrata("HIGH"); popout:SetClampedToScreen(true); popout:SetMovable(true)
 popout:EnableMouse(true); popout:RegisterForDrag("LeftButton")
-popout:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
-popout:SetBackdropColor(0.035,0.043,0.055,0.85); popout:SetBackdropBorderColor(0.5,0.37,0.18,1)
 local floatingGPS = CreateFrame("Frame",nil,popout)
 floatingGPS:SetSize(60,60); floatingGPS:SetPoint("TOP",0,-12)
 local floatingArrow = {}
 for i=1,3 do floatingArrow[i]=floatingGPS:CreateLine(nil,"OVERLAY"); floatingArrow[i]:SetThickness(5); floatingArrow[i]:SetColorTexture(0.93,0.78,0.51,1) end
 local floatingDistance=popout:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
-floatingDistance:SetPoint("TOP",0,-77); floatingDistance:SetWidth(182)
+floatingDistance:SetPoint("TOP",0,-77); floatingDistance:SetWidth(100)
 local floatingDirection=popout:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-floatingDirection:SetPoint("TOP",0,-100); floatingDirection:SetWidth(182)
-local dock=CreateFrame("Button",nil,popout,"UIPanelCloseButton"); dock:SetPoint("TOPRIGHT",2,2)
-dock:SetScript("OnClick",function() HT.ToggleArrowPopout(false) end)
+floatingDirection:Hide()
 popout:SetScript("OnDragStart",function() popout:StartMoving() end)
 popout:SetScript("OnDragStop",function()
     popout:StopMovingOrSizing(); local p,_,relative,x,y=popout:GetPoint(); db().arrowPosition={p,relative,x,y}
@@ -123,7 +119,7 @@ tracker:SetScript("OnDragStop", function()
     db().trackerPosition = {point, relative, x, y}
 end)
 local function button(text, x, callback)
-    local b = CreateFrame("Button", nil, tracker, "UIPanelButtonTemplate")
+    local b = HT.CreateButton(tracker)
     b:SetSize(92, 25); b:SetPoint("BOTTOMLEFT", x, 13); b:SetText(text)
     b:SetScript("OnClick", callback)
     return b
@@ -139,23 +135,24 @@ local advance = button("Refresh", 222, function()
 end)
 HT.upcomingButtons = {}
 for i = 1, 2 do
-    local b = CreateFrame("Button", nil, tracker, "UIPanelButtonTemplate")
+    local b = HT.CreateButton(tracker)
     b:SetSize(298, 23); b:SetPoint("BOTTOMLEFT", 16, 98 - (i-1)*25)
     b:SetScript("OnClick", function(self) HT.SelectStop(self.target) end)
     HT.upcomingButtons[i] = b
 end
 local function navButton(text, x, callback)
-    local b = CreateFrame("Button", nil, tracker, "UIPanelButtonTemplate")
+    local b = HT.CreateButton(tracker)
     b:SetSize(92,23); b:SetPoint("BOTTOMLEFT",x,48); b:SetText(text); b:SetScript("OnClick",callback)
     return b
 end
 HT.previousStop = navButton("Previous",16,function() HT.SelectStop(HT.ActiveStopIndex()-1) end)
 HT.nextStop = navButton("Skip / Next",119,function() HT.SelectStop(HT.ActiveStopIndex()+1) end)
-navButton("Popout GPS",222,function() HT.ToggleArrowPopout(not db().arrowPopout) end)
+local popoutButton = navButton("Popout GPS",222,function() HT.ToggleArrowPopout(not db().arrowPopout) end)
 HT.trackerControls = {map = map, advance = advance, current = current, tasks = tasks, mode = mode, distance = distance, arrow = arrow}
 function HT.RenderTracker()
     HT.Rebuild()
     mode:SetText(HT.ModeLabel() .. " · drag to move")
+    popoutButton:SetText(db().arrowPopout and "Dock GPS" or "Popout GPS")
     advance:SetText(HT.demo and "Next step" or "Refresh")
     map:SetText(HT.demo and "Exit demo" or "Map")
     map:SetEnabled(HT.demo ~= nil or (HT.me ~= nil and not HT.error and not HT.waiting))

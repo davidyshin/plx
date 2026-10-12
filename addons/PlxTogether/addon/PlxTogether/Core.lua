@@ -3,8 +3,33 @@ HT.peers, HT.queue, HT.catalog, HT.stops = {}, {}, {}, {}
 local PREFIX = "PlxTogether3"
 local function name(unit)
     local n, realm = UnitFullName(unit)
+    -- Forever exposes first name and surname separately through UnitName.
+    if UnitName and C_PlayerInfo and C_PlayerInfo.ShouldDisplaySurname then
+        local first, surname = UnitName(unit)
+        if first then
+            n = first
+            if surname and surname ~= "" and not first:find(" ", 1, true) then n = first .. " " .. surname end
+            realm = GetNormalizedRealmName()
+        end
+    end
     if not n then return end
     return n .. "-" .. ((realm and realm ~= "") and realm or GetNormalizedRealmName())
+end
+function HT.CreateButton(parent)
+    local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    b:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
+    b:SetBackdropColor(0.07,0.085,0.095,0.65); b:SetBackdropBorderColor(0.19,0.23,0.25,0.7)
+    local text = b:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    text:SetPoint("LEFT",7,0); text:SetPoint("RIGHT",-7,0)
+    b:SetFontString(text)
+    b:SetScript("OnEnter",function(self)
+        if self:IsEnabled() then self:SetBackdropColor(0.13,0.16,0.17,0.9); self:SetBackdropBorderColor(0.43,0.48,0.45,0.8) end
+    end)
+    b:SetScript("OnLeave",function(self)
+        self:SetBackdropColor(0.07,0.085,0.095,0.65); self:SetBackdropBorderColor(0.19,0.23,0.25,0.7)
+    end)
+    b:SetScript("OnUpdate",function(self) text:SetTextColor(self:IsEnabled() and 0.78 or 0.35,self:IsEnabled() and 0.82 or 0.39,self:IsEnabled() and 0.81 or 0.4) end)
+    return b
 end
 function HT.Print(message) print("|cffff5555PlxTogether:|r " .. message) end
 function HT.ModeLabel()

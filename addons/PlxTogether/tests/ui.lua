@@ -44,7 +44,7 @@ function methods:CreateTexture(name) return widget(self, "Texture", name) end
 function methods:CreateLine(name) return widget(self, "Line", name) end
 for _, method in ipairs({"SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetClampedToScreen", "SetMovable",
     "EnableMouse", "RegisterForDrag", "RegisterEvent", "StartMoving", "StopMovingOrSizing", "SetFrameStrata", "SetFrameLevel",
-    "SetWordWrap", "SetNonSpaceWrap", "SetJustifyH", "SetTextColor", "SetSpacing", "SetAllPoints", "SetColorTexture", "ClearAllPoints", "SetThickness",
+    "SetFontString", "SetWordWrap", "SetNonSpaceWrap", "SetJustifyH", "SetTextColor", "SetSpacing", "SetAllPoints", "SetColorTexture", "ClearAllPoints", "SetThickness",
     "SetStartPoint", "SetEndPoint", "SetScale", "SetScrollChild", "SetTexture", "SetVertexColor"}) do methods[method] = function() end end
 CreateFrame = function(kind, name, parent, template)
     local value = widget(parent, kind, name)
@@ -172,3 +172,16 @@ assert(PlxTogetherDB.arrowPosition[1] == "CENTER", "Detached position persists")
 HT.ToggleArrowPopout(false); HT.ToggleTracker(true)
 assert(not HT.arrowPopout:IsShown() and not PlxTogetherDB.arrowPopout)
 print("Navigation controls, names with spaces and detached GPS tests passed.")
+
+HT.ToggleArrowPopout(true)
+assert(HT.arrowPopout.width == 100 and HT.arrowPopout.height == 100, "Detached arrow uses a compact hit area")
+for _, child in ipairs(widgets) do
+    if child.parent == HT.arrowPopout then
+        assert(child.kind ~= "Button", "Detached GPS must not show a close button")
+        if child.kind == "FontString" and child:IsShown() then
+            assert(child.text:find("yd",1,true), "Detached GPS shows distance only")
+        end
+    end
+end
+HT.ToggleArrowPopout(false)
+print("Minimal detached GPS presentation tests passed.")

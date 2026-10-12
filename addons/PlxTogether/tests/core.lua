@@ -52,3 +52,19 @@ raid = true
 HT.Scan()
 assert(HT.error and not HT.me and #HT.stops == 0, "Disable quest plans in raids")
 print("Core integration tests passed.")
+
+raid, partyName = false, nil
+UnitName = function(unit) if unit == "player" then return "Just", "Evad" end end
+C_PlayerInfo = {ShouldDisplaySurname = function() return true end}
+HT.Scan()
+assert(HT.me.name == "Just Evad-Realm", "Surname must never be treated as a realm")
+assert(HT.MemberNames({HT.me.name}) == "Just Evad")
+partyName = "Party"
+UnitName = function(unit) if unit == "player" then return "Just", "Evad" elseif unit == "party1" then return "Other", "Evad" end end
+receive("Other Evad-Realm")
+assert(HT.peers["Other Evad-Realm"], "Surname-aware roster must accept full party sender names")
+UnitName = function(unit) if unit == "player" then return "Just Evad", nil end end
+partyName = nil
+HT.Scan(); assert(HT.me.name == "Just Evad-Realm", "Already joined names must stay intact")
+UnitName, C_PlayerInfo = nil, nil
+print("Forever first-name/surname identity tests passed.")
