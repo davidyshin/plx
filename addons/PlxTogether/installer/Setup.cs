@@ -29,6 +29,24 @@ internal sealed class SetupForm : Form {
     private readonly Label status = new Label();
     private readonly ProgressBar progress = new ProgressBar();
     private bool working;
+    private string installedClient;
+    internal static ProcessStartInfo PlayCommand(string client) {
+        foreach(string name in new[]{"WowB.exe","Wow.exe","WowClassic.exe"}) {
+            string executable=Path.Combine(client,name);
+            if(File.Exists(executable)) {
+                // Hand launch to the desktop shell instead of inheriting setup's elevation.
+                return new ProcessStartInfo {
+                    FileName=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),"explorer.exe"),
+                    Arguments=Program.Quote(executable), WorkingDirectory=client, UseShellExecute=true
+                };
+            }
+        }
+        throw new FileNotFoundException("WoW executable not found. Check your client folder.");
+    }
+    internal void InstallationSucceeded(string client) {
+        installedClient=client; install.Text="Play WoW";
+        browse.Enabled=false; folder.Enabled=false;
+    }
     private readonly Color gold = Color.FromArgb(239,203,135), muted = Color.FromArgb(170,184,175);
     private Label TextLabel(string text, int x, int y, int w, int h, float size, Color color) {
         var label = new Label {Text=text, Left=x, Top=y, Width=w, Height=h, ForeColor=color, Font=new Font("Segoe UI",size)};
@@ -73,6 +91,11 @@ internal sealed class SetupForm : Form {
         BeginInvoke((Action)delegate { log.AppendText(value+Environment.NewLine); });
     }
     private void Install(object sender,EventArgs e) {
+        if(installedClient!=null) {
+            try { Process.Start(PlayCommand(installedClient)); Close(); }
+            catch(Exception error) { status.Text="Could not launch WoW. Try again or open it normally."; Append(error.Message); }
+            return;
+        }
         string root=AppDomain.CurrentDomain.BaseDirectory;
         string script=Path.Combine(root,"Support","Install-Friends.ps1");
         if(!File.Exists(script)) script=Path.Combine(root,"Install-Friends.ps1");
@@ -98,7 +121,7 @@ internal sealed class SetupForm : Form {
                 working=false; install.Enabled=true; browse.Enabled=true; folder.Enabled=true; progress.Style=ProgressBarStyle.Continuous; progress.Value=code==0?100:0;
                 status.Text=code==0?"Installed and verified. Ready to play!":"Installation stopped. See details below.";
                 status.ForeColor=code==0?Color.FromArgb(140,210,171):Color.FromArgb(240,155,131);
-                if(code==0) install.Text="Install again";
+                if(code==0) InstallationSucceeded(client);
             });
         };
         try { process.Start(); process.BeginOutputReadLine(); process.BeginErrorReadLine(); }

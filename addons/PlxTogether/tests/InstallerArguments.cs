@@ -17,6 +17,26 @@ internal static class InstallerArguments {
       form.DrawToBitmap(image,new Rectangle(0,0,form.Width,form.Height)); form.Hide();
       image.Save(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),"installer-preview.png"));
     }
-    Console.WriteLine("Executable installer checks passed: argument quoting and actual form rendering without installing or elevating.");return 0;
+    string fixture=Path.Combine(Path.GetTempPath(),"plx-play-"+Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(fixture);
+    try {
+      File.WriteAllText(Path.Combine(fixture,"WowB.exe"),"fixture only");
+      File.WriteAllText(Path.Combine(fixture,"Wow.exe"),"fixture only");
+      var command=SetupForm.PlayCommand(fixture);
+      if(Path.GetFileName(command.FileName)!="explorer.exe" || command.Arguments!=Program.Quote(Path.Combine(fixture,"WowB.exe")) || command.WorkingDirectory!=fixture)
+        throw new Exception("Play must select the installed beta client through the desktop shell");
+      using(var form=new SetupForm()) {
+        form.InstallationSucceeded(fixture);
+        var button=(System.Windows.Forms.Button)typeof(SetupForm).GetField("install",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(form);
+        if(button.Text!="Play WoW") throw new Exception("Successful install must offer Play WoW");
+      }
+      File.Delete(Path.Combine(fixture,"WowB.exe"));
+      if(SetupForm.PlayCommand(fixture).Arguments!=Program.Quote(Path.Combine(fixture,"Wow.exe"))) throw new Exception("Retail executable fallback failed");
+      File.Delete(Path.Combine(fixture,"Wow.exe"));
+      bool rejected=false;
+      try { SetupForm.PlayCommand(fixture); } catch(FileNotFoundException) { rejected=true; }
+      if(!rejected) throw new Exception("Missing executable must fail before closing setup");
+    } finally { Directory.Delete(fixture,true); }
+    Console.WriteLine("Executable installer checks passed: argument quoting, form rendering and Play WoW transition without launching or elevating.");return 0;
   }
 }
