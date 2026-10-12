@@ -15,6 +15,7 @@ permissions:
 jobs:
   package:
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,7 +36,8 @@ jobs:
         shell: powershell
         run: ./addons/PlxTogether/tests/installer.ps1
       - name: Build complete package
-        shell: powershell
+        timeout-minutes: 12
+        shell: pwsh
         run: ./addons/PlxTogether/Build-Friends-Bundle.ps1
       - name: Publish package
         env:
