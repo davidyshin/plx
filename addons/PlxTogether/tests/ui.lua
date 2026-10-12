@@ -45,7 +45,7 @@ function methods:CreateLine(name) return widget(self, "Line", name) end
 for _, method in ipairs({"SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetClampedToScreen", "SetMovable",
     "EnableMouse", "RegisterForDrag", "RegisterEvent", "StartMoving", "StopMovingOrSizing", "SetFrameStrata", "SetFrameLevel",
     "SetJustifyH", "SetTextColor", "SetSpacing", "SetAllPoints", "SetColorTexture", "ClearAllPoints", "SetThickness",
-    "SetStartPoint", "SetEndPoint", "SetScale", "SetScrollChild"}) do methods[method] = function() end end
+    "SetStartPoint", "SetEndPoint", "SetScale", "SetScrollChild", "SetTexture", "SetVertexColor"}) do methods[method] = function() end end
 CreateFrame = function(kind, name, parent, template)
     local value = widget(parent, kind, name)
     if template == "UIPanelCloseButton" then value.scripts.OnClick = function() parent:Hide() end end
@@ -65,7 +65,7 @@ C_Map = {GetBestMapForUnit = function() return 1 end, GetMapInfo = function() re
     GetPlayerMapPosition = function() return {x = 0.1, y = 0.2} end}
 C_ChatInfo = {RegisterAddonMessagePrefix = function() end, SendAddonMessage = function() sent = sent + 1 end}
 OpenWorldMap = function() opened = opened + 1 end
-for _, file in ipairs({"Planner", "Protocol", "Demo", "Core", "Map", "Guide", "Window", "Tracker"}) do
+for _, file in ipairs({"Planner", "Protocol", "Demo", "Core", "Navigation", "Map", "Guide", "Window", "Tracker"}) do
     assert(loadfile("addon/PlxTogether/" .. file .. ".lua"))("PlxTogether", HT)
 end
 HT.Provider = {Scan = function() return nil, "Questie is not installed." end}
@@ -78,6 +78,10 @@ HT.buttons.guide.scripts.OnClick()
 assert(not HT.guideShown, "Back to route closes the guide")
 HT.buttons.demo.scripts.OnClick()
 assert(HT.demo and HT.window:IsShown(), "Demo opens from the empty/error state")
+assert(#HT.routeCards[1].rows == 2 and HT.routeCards[1].rows[1].number.text == "1.1" and HT.routeCards[1].rows[2].number.text == "1.2", "Shared stops have separate numbered substeps")
+assert(HT.routeCards[1].rows[1].members.text:find("Needed by:",1,true))
+HT.RenderTracker()
+assert(HT.trackerControls.mode.text:find("DEMO · SIMULATED",1,true))
 HT.window.scripts.OnUpdate(HT.window, 1)
 assert(HT.buttons.nextStep:IsShown() and HT.buttons.nextStep:IsEnabled())
 for _, item in ipairs(widgets) do
@@ -94,6 +98,7 @@ assert(HT.demo.steps == 0, "Reset button restores the demo")
 local steps = 0
 while #HT.stops > 0 and steps < 50 do HT.Demo.Next(); steps = steps + 1 end
 HT.window.scripts.OnUpdate(HT.window, 1)
+HT.RenderTracker()
 assert(not HT.buttons.nextStep:IsEnabled(), "Next is disabled when demo is complete")
 for _, item in ipairs(widgets) do
     if item.kind == "Line" then assert(not item:IsShown(), "Completed routes must clear old overview lines") end
@@ -117,6 +122,38 @@ assert(not HT.tracker:IsShown() and PlxTogetherDB.trackerHidden)
 SlashCmdList.PLXTOGETHER("hud show")
 assert(HT.tracker:IsShown() and not PlxTogetherDB.trackerHidden)
 HT.Demo.Stop(); HT.RenderTracker()
+assert(HT.trackerControls.mode.text:find("SOLO MODE",1,true), "Real solo play must not be labelled a preview")
 assert(HT.trackerControls.tasks.text == "Questie is not installed.")
 assert(not HT.trackerControls.map:IsEnabled(), "Tracker disables the map when live data is missing")
 print("Persistent tracker interaction tests passed.")
+local oldRebuild, oldFocus = HT.Rebuild, HT.FocusStop
+HT.Rebuild = function() end
+HT.me = {time=100,mapID=1}; HT.error,HT.waiting=nil,nil
+local task={action="Pick up",quest={id=1,name="Test quest"},neededBy={"Me-Realm"}}
+HT.stops={{point={mapID=1,x=0.2,y=0.3},tasks={task}}, {point={mapID=1,x=0.4,y=0.5},tasks={task}}}
+WorldMapFrame=widget(UIParent,"Frame","WorldMap"); WorldMapFrame.mapID,WorldMapFrame.canvasScale=1,1
+function methods:GetMapID() return self.mapID end
+function methods:GetCanvasScale() return self.canvasScale end
+function methods:SetScale(value) self.scale=value end
+WorldMapFrame.ScrollContainer={Child=widget(WorldMapFrame,"Frame","Canvas")}
+WorldMapFrame.ScrollContainer.Child:SetSize(1000,800)
+local tooltipVisible,tooltipOwner=false,nil
+GameTooltip={SetOwner=function(_,owner) tooltipOwner=owner end,SetText=function() end,AddLine=function() end,
+    Show=function() tooltipVisible=true end,Hide=function() tooltipVisible=false end,IsOwned=function(_,owner) return tooltipOwner==owner end}
+HT.mapUpdater.scripts.OnUpdate(HT.mapUpdater,0.2)
+assert(#HT.mapPins==2 and HT.mapPins[1].badge:IsShown() and not HT.mapPins[2].badge:IsShown())
+HT.mapPins[1].scripts.OnEnter(HT.mapPins[1])
+HT.mapUpdater.scripts.OnUpdate(HT.mapUpdater,0.2)
+assert(tooltipVisible,"Refreshing pins must not dismiss hovered tooltips")
+WorldMapFrame.canvasScale=2
+HT.mapUpdater.scripts.OnUpdate(HT.mapUpdater,0.2)
+assert(HT.mapPins[1].scale==0.5 and HT.mapPins[1].anchor.point[4]==200,"Zoom must preserve world placement and screen marker size")
+local focused
+HT.FocusStop=function(index) focused=index end
+HT.mapPins[2].scripts.OnClick(HT.mapPins[2]); assert(focused==2)
+WorldMapFrame.mapID=2
+HT.mapUpdater.scripts.OnUpdate(HT.mapUpdater,0.2)
+assert(not HT.mapPins[1].anchor:IsShown(),"Pins must hide on other maps")
+HT.Rebuild,HT.FocusStop=oldRebuild,oldFocus
+WorldMapFrame=nil
+print("Map presentation tests passed: markers, stable hover, zoom scaling, click-to-substeps, zone changes.")

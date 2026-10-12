@@ -1,5 +1,8 @@
 local _, HT = ...
 HT.Guide = {
+    {"Read the route", "Each large number is a map stop. Inside it, 1.1, 1.2 and so on are separate substeps. The action label says PICK UP, COMPLETE OBJECTIVE, or TURN IN. Needed by names only the players who still need that task. Nearby tasks share one stop."},
+    {"Follow the direction arrow", "The tracker points directly to the next stop and shows yards. Turn your character until the arrow points up. At the stop means you are nearby, not that the quest is complete. The arrow does not find roads or avoid obstacles. It pauses when position or map scale is unavailable."},
+    {"Solo or demo?", "SOLO MODE uses your real character and quests. PARTY MODE uses your party. DEMO · SIMULATED uses fictional quests; click Exit demo or type /plx live to return to your character. Being alone never starts the demo automatically."},
     {"On-screen tracker", "Close Details to follow your route on the small tracker. Drag it to move it. /plx hud toggles it; /plx hud show restores it. The tracker lists the current stop, who needs it, coordinates, and upcoming stops. In the solo preview, Next step advances the simulated route."},
     {"1. Try it solo", "Type /plx demo or click Try solo demo. Three sample players show how shared quests and XP differences affect the route. Questie is not needed for this preview."},
     {"2. Follow the gold stop", "Start with the highlighted NEXT card. Its number matches the route overview and, in live mode, the world map. Nearby tasks share one stop. The For line names who needs each task."},

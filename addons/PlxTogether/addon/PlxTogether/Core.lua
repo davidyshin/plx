@@ -7,6 +7,20 @@ local function name(unit)
     return n .. "-" .. ((realm and realm ~= "") and realm or GetNormalizedRealmName())
 end
 function HT.Print(message) print("|cffff5555PlxTogether:|r " .. message) end
+function HT.ModeLabel()
+    if HT.demo then return "DEMO · SIMULATED" end
+    return IsInGroup() and "PARTY MODE" or "SOLO MODE"
+end
+function HT.TaskInstruction(task)
+    if task.action == "Pick up" then return "Accept this quest from the quest giver." end
+    if task.action == "Turn in" then return "Hand in the completed quest." end
+    return task.text or "Complete this objective; check your quest log for details."
+end
+function HT.MemberNames(names)
+    local short = {}
+    for _, name in ipairs(names or {}) do short[#short + 1] = name:match("^[^-]+") end
+    return table.concat(short, ", ")
+end
 local function roster()
     local result = {}
     for i = 1, 4 do
@@ -166,7 +180,7 @@ SlashCmdList.PLXTOGETHER = function(input)
     elseif input == "hud hide" then HT.ToggleTracker(false)
     elseif input == "guide" or input == "help" then if HT.ShowGuide then HT.ShowGuide() end
     elseif input == "demo next" then HT.Demo.Next()
-    elseif input == "live" or input == "demo off" then HT.Demo.Stop()
+    elseif input == "live" or input == "solo" or input == "demo off" then HT.Demo.Stop()
     elseif input == "refresh" then HT.routeKey = nil; HT.Scan(); HT.Report()
     elseif input == "status" then HT.Status()
     elseif input == "map" then

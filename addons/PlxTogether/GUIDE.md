@@ -37,7 +37,7 @@ Estimates still need verification against Forever's actual beta quest rewards.
 
 Use `/plx live` to exit the demo. Escape closes the window.
 
-## On-screen route tracker (0.4.0)
+## On-screen route tracker (0.5.0)
 
 The small PlxTogether tracker stays visible while the large Details window is closed. Drag it to move it. It shows your current stop, map coordinates, who needs the tasks, and the next two stops. Details opens the full route; Map opens the live zone map.
 
@@ -46,3 +46,11 @@ Use `/plx hud` to toggle the tracker, `/plx hud show` to restore it, and `/plx h
 To preview solo, run `/plx demo`, close Details, and use **Next step** on the tracker. The preview uses fictional quests and sends no party messages. Use `/plx live` to return to your character. Live progress comes from quest updates; Refresh does not mark a quest complete.
 
 The route uses approximate map locations, not terrain-aware navigation. Forever beta XP rules and the new tracker still need verification in the game client.
+
+## Version 0.5.0
+
+- The direction arrow points to the next stop, updates as you turn, and shows approximate yards. It is direct compass guidance, not terrain-aware navigation. At the stop does not complete a quest.
+- Route stops contain separate action-labelled substeps (1.1, 1.2), dividers, and Needed by lists. Click a live map pin to open that stop's instructions.
+- SOLO MODE is your real character. PARTY MODE is your real party. DEMO · SIMULATED is the fictional test, with an Exit demo button on the tracker. /plx live leaves the demo.
+- The complete friends ZIP includes PlxTogether-Setup.exe, a Windows installer with the Paddington logo and game-folder selection. Extract the entire ZIP before launching it; keep the executable beside Install-Friends.ps1 and AddOns. The source checkout is not an installable friends package.
+- Website previews are interactive illustrations using sample data, not screenshots of a running game.

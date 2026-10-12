@@ -3,7 +3,7 @@
 Download the **PlxTogether-Friends.zip** release asset. GitHub's **Source code (zip)** is a developer checkout and does not contain Questie or a ready-to-run complete installer. If you downloaded source, run Build-Friends-Bundle.ps1 from addons/PlxTogether using a network-enabled terminal, then extract the generated dist/PlxTogether-Friends.zip.
 
 1. Close WoW and extract the entire PlxTogether-Friends.zip.
-2. On Windows, run Install-Friends.cmd. Enter the Forever client folder containing the WoW executable (WowB.exe on the current beta), or press Enter for the standard _classic_beta_ location. If Windows denies access, right-click the CMD file and Run as administrator.
+2. On Windows, run **PlxTogether-Setup.exe** and approve the administrator prompt. Choose the Forever client folder containing the WoW executable (WowB.exe on the current beta), then click Install addons. The default is the standard _classic_beta_ location. The executable must remain beside Install-Friends.ps1 and the AddOns folder. Install-Friends.cmd remains available as a fallback.
 3. Launch Forever. Enable PlxTogether, Questie and QuestieDB in the character-selection AddOns list, along with any bundled dependency folders.
 4. Type `/plx demo` to try a simulated Horde party solo. Close Details to see the small on-screen tracker. Next step advances the preview; `/plx live` returns to your character.
 5. For live play, all Horde party members install this package, form a normal party, and meet in the same zone.

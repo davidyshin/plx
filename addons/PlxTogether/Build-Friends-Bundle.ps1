@@ -30,6 +30,7 @@ foreach ($folder in @('Questie', 'QuestieDB')) {
 }
 Copy-Item -LiteralPath "$PSScriptRoot\addon\PlxTogether" -Destination "$package\AddOns" -Recurse
 Copy-Item -LiteralPath "$PSScriptRoot\Install-Friends.ps1", "$PSScriptRoot\Install-Friends.cmd", "$PSScriptRoot\FRIENDS-INSTALL.md" -Destination $package
+& "$PSScriptRoot\Build-Installer.ps1" -OutputDirectory $package
 # Keep the upstream source, build scripts and license alongside the unmodified addons.
 Download 'https://codeload.github.com/Questie/Questie/zip/29f066c' "$package\ThirdParty\Questie-source-29f066c.zip"
 Download 'https://codeload.github.com/Questie/QuestieDB/zip/e0a6eaa' "$package\ThirdParty\QuestieDB-source-e0a6eaa.zip"

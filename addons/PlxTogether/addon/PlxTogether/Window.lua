@@ -31,8 +31,10 @@ drag:SetScript("OnDragStop", function()
     local point, _, relativePoint, x, y = window:GetPoint()
     PlxTogetherDB.position = {point, relativePoint, x, y}
 end)
-local brand = label(window, "Plx|cffeac383Together|r", "GameFontNormalLarge", 24, -20)
-local subtitle = label(window, "A better route. Together.", "GameFontHighlightSmall", 24, -47)
+local logo = window:CreateTexture(nil, "ARTWORK")
+logo:SetSize(46, 46); logo:SetPoint("TOPLEFT", 20, -14); logo:SetTexture("Interface\\AddOns\\PlxTogether\\Media\\paddington.tga")
+local brand = label(window, "Plx|cffeac383Together|r", "GameFontNormalLarge", 78, -20)
+local subtitle = label(window, "A better route. Together.", "GameFontHighlightSmall", 78, -47)
 subtitle:SetTextColor(0.58, 0.64, 0.7)
 local mode = label(window, "LIVE PARTY", "GameFontNormalSmall", 555, -25, 200)
 local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
@@ -87,6 +89,7 @@ end)
 local nextButton = button("Next step", 666, 130, function() HT.Demo.Next() end)
 HT.buttons = {demo = demoButton, nextStep = nextButton, refresh = refresh, map = mapButton}
 local render
+local routeOffsets = {}
 local guideButton = button("Guide", 280, 88, function()
     HT.guideShown = not HT.guideShown
     scroll:SetVerticalScroll(0)
@@ -100,14 +103,16 @@ local function paintPlot()
     for i, stop in ipairs(HT.stops or {}) do
         local pin = pins[i]
         if not pin then
-            pin = panel(plot, 20, 20)
+            pin = CreateFrame("Frame",nil,plot); pin:SetSize(22,22)
+            pin.disk=pin:CreateTexture(nil,"BACKGROUND"); pin.disk:SetAllPoints()
+            pin.disk:SetTexture("Interface\\AddOns\\PlxTogether\\Media\\route-pin.tga")
             pin.text = pin:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
             pin.text:SetPoint("CENTER")
             pins[i] = pin
         end
         local x, y = 10 + stop.point.x * 220, -10 - stop.point.y * 160
         pin:ClearAllPoints(); pin:SetPoint("CENTER", plot, "TOPLEFT", x, y)
-        pin:SetBackdropColor(i == 1 and 0.65 or 0.13, i == 1 and 0.44 or 0.3, i == 1 and 0.12 or 0.35, 1)
+        pin.disk:SetVertexColor(i==1 and 0.96 or 0.61,i==1 and 0.78 or 0.84,i==1 and 0.45 or 0.79)
         pin.text:SetText(i); pin:Show()
         if previous and plot.CreateLine then
             local line = links[i - 1]
@@ -126,10 +131,15 @@ local function showCard(index, title, body, active, number)
         card.number = label(card, "", "GameFontNormalLarge", 14, -16, 28)
         card.title = label(card, "", "GameFontNormal", 52, -14, 394)
         card.body = label(card, "", "GameFontHighlightSmall", 52, -40, 394)
+        card.rows = {}
+        card.meta = label(card, "", "GameFontHighlightSmall", 52, -38, 394)
         card.body:SetSpacing(3)
         cards[index] = card
     end
     card.number:SetText(number or "·")
+    card.body:Show()
+    if card.rows then for _, row in ipairs(card.rows) do row:Hide() end end
+    if card.meta then card.meta:Hide() end
     card.title:SetText(title); card.body:SetText(body)
     local titleHeight = card.title:GetStringHeight()
     card.body:ClearAllPoints(); card.body:SetPoint("TOPLEFT", 52, -22 - titleHeight)
@@ -139,13 +149,54 @@ local function showCard(index, title, body, active, number)
     card:Show()
     return card
 end
+local function showRouteCard(index, stop, number)
+    local title = #stop.tasks > 1 and "Shared stop" or stop.tasks[1].quest.name
+    local card = showCard(index, title, "", number == 1, string.format("%02d", number))
+    card.body:Hide()
+    if not card.meta then card.meta = label(card, "", "GameFontHighlightSmall", 52, -38, 394) end
+    local offset = 22 + card.title:GetStringHeight()
+    card.meta:ClearAllPoints(); card.meta:SetPoint("TOPLEFT", 52, -offset)
+    card.meta:SetText(string.format("%s · %d substep%s · %.1f, %.1f", number == 1 and "NEXT STOP" or "UPCOMING",
+        #stop.tasks, #stop.tasks == 1 and "" or "s", stop.point.x*100, stop.point.y*100))
+    card.meta:SetTextColor(0.67, 0.72, 0.75); card.meta:Show()
+    offset = offset + card.meta:GetStringHeight() + 16
+    card.rows = card.rows or {}
+    for taskIndex, task in ipairs(stop.tasks) do
+        local row = card.rows[taskIndex]
+        if not row then
+            row = CreateFrame("Frame", nil, card); row:SetWidth(432)
+            row.divider = row:CreateTexture(nil, "ARTWORK"); row.divider:SetSize(432, 1)
+            row.divider:SetPoint("TOPLEFT"); row.divider:SetColorTexture(0.23, 0.26, 0.28, 1)
+            row.number = label(row, "", "GameFontNormalSmall", 0, -15, 42)
+            row.action = label(row, "", "GameFontNormalSmall", 48, -14, 384)
+            row.instruction = label(row, "", "GameFontHighlight", 48, -36, 384)
+            row.members = label(row, "", "GameFontHighlightSmall", 48, -58, 384)
+            row.members:SetTextColor(0.57, 0.76, 0.69)
+            card.rows[taskIndex] = row
+        end
+        row:ClearAllPoints(); row:SetPoint("TOPLEFT", 16, -offset)
+        row.number:SetText(number .. "." .. taskIndex)
+        row.action:SetText((task.action == "Objective" and "COMPLETE OBJECTIVE" or task.action:upper()) .. " · " .. task.quest.name)
+        local instructionOffset = 20 + row.action:GetStringHeight()
+        row.instruction:ClearAllPoints(); row.instruction:SetPoint("TOPLEFT", 48, -instructionOffset)
+        row.instruction:SetText(HT.TaskInstruction(task))
+        local membersOffset = instructionOffset + row.instruction:GetStringHeight() + 8
+        row.members:ClearAllPoints(); row.members:SetPoint("TOPLEFT", 48, -membersOffset)
+        row.members:SetText("Needed by: " .. HT.MemberNames(task.neededBy))
+        row:SetHeight(membersOffset + row.members:GetStringHeight() + 16)
+        row:Show(); offset = offset + row:GetHeight()
+    end
+    card:SetHeight(offset + 4)
+    return card
+end
+HT.routeCards = cards
 render = function()
     HT.Rebuild()
     guideButton:SetText(HT.guideShown and "Back to route" or "Guide")
     guideButton:SetWidth(HT.guideShown and 118 or 88)
     routeHeading:SetText(HT.guideShown and "GETTING STARTED" or "YOUR NEXT STOPS")
     local demo = HT.demo ~= nil
-    mode:SetText(demo and "|cffeac383SOLO DEMO · SIMULATED|r" or "|cff86c9b4LIVE · HORDE|r")
+    mode:SetText((demo and "|cffeac383" or "|cff86c9b4") .. HT.ModeLabel() .. "|r")
     demoButton:SetText(demo and "Exit demo" or "Try solo demo")
     nextButton:SetShown(demo)
     nextButton:SetEnabled(demo and #(HT.stops or {}) > 0)
@@ -203,14 +254,11 @@ render = function()
         card("Waiting for your party", HT.waiting .. "\nEveryone needs PlxTogether and Questie in the same zone.", true)
     else
         for i, stop in ipairs(HT.stops or {}) do
-            local body = {}
-            for _, task in ipairs(stop.tasks) do
-                if #stop.tasks > 1 then body[#body + 1] = task.action .. ": " .. task.quest.name end
-                if task.text then body[#body + 1] = task.text end
-                body[#body + 1] = "|cff91b9b1For: " .. table.concat(task.neededBy, ", ") .. "|r"
-            end
-            body[#body + 1] = string.format("|cff87939f%.1f, %.1f|r", stop.point.x * 100, stop.point.y * 100)
-            card((i == 1 and "|cffeac383NEXT · |r" or "") .. HT.Planner.Title(stop), table.concat(body, "\n"), i == 1, i)
+            count = count + 1
+            local item = showRouteCard(count, stop, i)
+            item:ClearAllPoints(); item:SetPoint("TOPLEFT", 0, -offset)
+            routeOffsets[i] = offset
+            offset = offset + item:GetHeight() + 14
         end
         if #(HT.stops or {}) == 0 then
             card(demo and "Demo complete" or "No mapped shared stops",
@@ -219,18 +267,18 @@ render = function()
         end
         if #(HT.notes or {}) > 0 then card("Check your quest log", table.concat(HT.notes, "\n"), false) end
         if #(HT.ranked or {}) > 0 then
-            local body = {}
+            card("XP FOR EVERYONE", "Estimated quest rewards for each player. The route gives extra weight to the lowest individual benefit.", false)
             for i = 1, math.min(8, #HT.ranked) do
                 local row = HT.ranked[i]
-                body[#body + 1] = "|cffeac383" .. row.quest.name .. "|r"
+                local body = {}
                 for _, detail in ipairs(row.details) do
                     local status = ({A = "Needs pickup", L = "In progress", T = "Ready to turn in"})[detail.status] or "Unknown"
-                    body[#body + 1] = string.format("%s · %d XP · %d%% retained · %s", detail.name,
+                    body[#body + 1] = string.format("%s · %d XP · %d%% retained\n%s", HT.MemberNames({detail.name}),
                         detail.xp, math.floor((detail.retention or 0) * 100), status)
+                    body[#body + 1] = ""
                 end
-                body[#body + 1] = ""
+                card(row.quest.name,table.concat(body,"\n"),false)
             end
-            card("Why these quests?", "Shared eligibility, with extra weight on the lowest individual benefit.\n\n" .. table.concat(body, "\n"), false)
         end
     end
     content:SetHeight(math.max(400, offset))
@@ -262,3 +310,7 @@ function HT.ResetScroll() scroll:SetVerticalScroll(0) end
 function HT.ShowWindow() scroll:SetVerticalScroll(0); window:Show(); render() end
 function HT.ToggleWindow() window:SetShown(not window:IsShown()) end
 function HT.ShowGuide() HT.guideShown = true; HT.ShowWindow() end
+function HT.FocusStop(index)
+    HT.guideShown = false; HT.ShowWindow()
+    scroll:SetVerticalScroll(math.min(routeOffsets[index] or 0, math.max(0, content:GetHeight() - scroll:GetHeight())))
+end

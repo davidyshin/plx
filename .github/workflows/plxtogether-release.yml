@@ -35,6 +35,9 @@ jobs:
       - name: Test installer
         shell: powershell
         run: ./addons/PlxTogether/tests/installer.ps1
+      - name: Test executable installer
+        shell: powershell
+        run: ./addons/PlxTogether/tests/executable.ps1
       - name: Build complete package
         timeout-minutes: 12
         shell: pwsh
@@ -44,10 +47,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          $tag = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME } else { 'plxtogether-v0.4.0' }
+          $tag = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME } else { 'plxtogether-v0.5.0' }
           gh release view $tag *> $null
           if ($LASTEXITCODE -ne 0) {
-            gh release create $tag --target $env:GITHUB_SHA --title 'PlxTogether 0.4.0 + Questie' --notes 'One download with PlxTogether, Questie, matching upstream source, and a Windows installer. Forever beta Horde prototype; XP rules and UI need in-game validation.'
+            gh release create $tag --target $env:GITHUB_SHA --title 'PlxTogether 0.5.0 + Questie' --notes 'One download with PlxTogether, Questie, matching upstream source, and a Windows installer. Forever beta Horde prototype; XP rules and UI need in-game validation.'
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
           gh release upload $tag addons/PlxTogether/dist/PlxTogether-Friends.zip addons/PlxTogether/dist/SHA256SUMS.txt --clobber
