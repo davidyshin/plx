@@ -23,5 +23,10 @@ $invalid = Join-Path $fixture 'not-a-client'
 New-Item -ItemType Directory -Path $invalid | Out-Null
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$payload\Install-Friends.ps1" -ClientPath $invalid
 if ($LASTEXITCODE -eq 0 -or (Test-Path -LiteralPath "$invalid\Interface")) { throw 'Invalid game folder should fail before writing' }
-Write-Host 'Installer integration checks passed: beta executable, fresh install, verified update, backup, invalid-client rejection.'
+$sourceOnly = Join-Path $fixture 'source-only'
+New-Item -ItemType Directory -Path $sourceOnly | Out-Null
+Copy-Item -LiteralPath "$project\Install-Friends.ps1" -Destination $sourceOnly
+$message = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$sourceOnly\Install-Friends.ps1" -ClientPath $client
+if ($LASTEXITCODE -eq 0 -or ($message -join ' ') -notmatch 'not the complete installer package') { throw 'Source-only ZIP should explain the missing package before asking for a game folder' }
+Write-Host 'Installer integration checks passed: beta executable, fresh install, verified update, backup, invalid-client and source-only rejection.'
 exit 0

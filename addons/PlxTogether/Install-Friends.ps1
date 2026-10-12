@@ -1,6 +1,10 @@
 param([string]$ClientPath)
 $ErrorActionPreference = 'Stop'
 try {
+    $source = Join-Path $PSScriptRoot 'AddOns'
+    if (-not (Test-Path -LiteralPath "$source\PlxTogether\PlxTogether.toc") -or -not (Test-Path -LiteralPath "$source\Questie") -or -not (Test-Path -LiteralPath "$source\QuestieDB")) {
+        throw 'This is not the complete installer package. Download PlxTogether-Friends.zip from https://github.com/davidyshin/plx/releases/tag/plxtogether-v0.4.0 (not Source code), extract the whole ZIP, and run the installer beside its AddOns folder. If using the source repository, first run Build-Friends-Bundle.ps1, then extract dist\PlxTogether-Friends.zip.'
+    }
     if (-not $ClientPath) {
         $default = 'C:\Program Files (x86)\World of Warcraft\_classic_beta_'
         $answer = Read-Host "Forever client folder (Enter for $default)"
@@ -13,9 +17,7 @@ try {
     $running = Get-Process -Name WowB,Wow,WowClassic -ErrorAction SilentlyContinue
     if ($running) { throw 'Close World of Warcraft before installing.' }
     $addons = Join-Path $client 'Interface\AddOns'
-    $source = Join-Path $PSScriptRoot 'AddOns'
     $folders = @(Get-ChildItem -LiteralPath $source -Directory)
-    if (-not (Test-Path -LiteralPath "$source\PlxTogether\PlxTogether.toc") -or -not (Test-Path -LiteralPath "$source\Questie") -or -not (Test-Path -LiteralPath "$source\QuestieDB")) { throw 'Extract the whole friends ZIP before running the installer.' }
     New-Item -ItemType Directory -Path $addons -Force | Out-Null
     $backup = Join-Path $PSScriptRoot ('Backups\' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N'))
     foreach ($folder in $folders) {
@@ -36,6 +38,8 @@ try {
     Write-Host 'Installed and verified PlxTogether + Questie. Enable them in the character-selection AddOns list. Type /plx demo to preview solo.' -ForegroundColor Green
 } catch {
     Write-Host $_.Exception.Message -ForegroundColor Red
-    Write-Host 'If Windows denied access to Program Files, right-click Install-Friends.cmd and choose Run as administrator. Manual installation is also in FRIENDS-INSTALL.md.'
+    if ($_.Exception -is [System.UnauthorizedAccessException]) {
+        Write-Host 'Windows denied access. Right-click Install-Friends.cmd and choose Run as administrator. Manual installation is also in FRIENDS-INSTALL.md.'
+    }
     exit 1
 }

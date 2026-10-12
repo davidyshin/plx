@@ -1,5 +1,7 @@
 # One download: PlxTogether + Questie
 
+Download the **PlxTogether-Friends.zip** release asset. GitHub's **Source code (zip)** is a developer checkout and does not contain Questie or a ready-to-run complete installer. If you downloaded source, run Build-Friends-Bundle.ps1 from addons/PlxTogether using a network-enabled terminal, then extract the generated dist/PlxTogether-Friends.zip.
+
 1. Close WoW and extract the entire PlxTogether-Friends.zip.
 2. On Windows, run Install-Friends.cmd. Enter the Forever client folder containing the WoW executable (WowB.exe on the current beta), or press Enter for the standard _classic_beta_ location. If Windows denies access, right-click the CMD file and Run as administrator.
 3. Launch Forever. Enable PlxTogether, Questie and QuestieDB in the character-selection AddOns list, along with any bundled dependency folders.
