@@ -1,8 +1,15 @@
 name: PlxTogether friends package
 on:
   push:
+    branches: ['main']
     tags: ['plxtogether-v*']
+    paths:
+      - 'addons/PlxTogether/**'
+      - '.github/workflows/plxtogether-release.yml'
   workflow_dispatch:
+concurrency:
+  group: plxtogether-release
+  cancel-in-progress: false
 permissions:
   contents: write
 jobs:

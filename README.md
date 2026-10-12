@@ -4,7 +4,7 @@
 
 The installation guide is served at `/plxtogether/` with a link from the roster page. Addon source and tests live in `addons/PlxTogether`.
 
-Push a `plxtogether-v0.4.0` tag or run the **PlxTogether friends package** GitHub Actions workflow to test, build, and publish the single friends download. It contains PlxTogether, the checksum-verified Questie 12.0.4 + QuestieDB 1.0.5 package, matching upstream source archives, notices, and a Windows installer. The website enables its complete-package button once that release asset exists. Netlify deploys the guide with the existing site build.
+Pushing addon or packaging-workflow changes to `main` automatically runs the **PlxTogether friends package** workflow to test, build, and publish the single friends download. A `plxtogether-v0.4.0` tag push or manual workflow run also works. Runs are serialized to avoid simultaneous uploads. The package contains PlxTogether, the checksum-verified Questie 12.0.4 + QuestieDB 1.0.5 package, matching upstream source archives, notices, and a Windows installer. The website enables its complete-package button once that release asset exists. Netlify deploys the guide with the existing site build.
 
 Build locally from a network-enabled PowerShell terminal with `./addons/PlxTogether/Build-Friends-Bundle.ps1`. Output goes to the ignored `addons/PlxTogether/dist` folder. Pass `-QuestieZip` to reuse an already downloaded official ZIP; its SHA256 is still checked. No large Questie archives are committed to Git.
 
