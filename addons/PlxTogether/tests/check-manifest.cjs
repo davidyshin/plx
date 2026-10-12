@@ -3,6 +3,10 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const root = path.join(__dirname, '..', 'addon', 'PlxTogether');
 const toc = fs.readFileSync(path.join(root, 'PlxTogether.toc'), 'utf8');
+const icon = toc.match(/^## IconTexture:\s*(.+)$/m);
+assert(icon, 'Addon list icon metadata is required');
+assert.equal(icon[1].trim(), 'Interface\\AddOns\\PlxTogether\\Media\\paddington.tga');
+assert(fs.existsSync(path.join(root, 'Media', 'paddington.tga')), 'Addon list icon file is missing');
 const files = toc.split(/\r?\n/).map(s => s.trim()).filter(s => s && !s.startsWith('#'));
 assert.deepEqual(files, ['Planner.lua', 'Protocol.lua', 'Provider.lua', 'Demo.lua', 'Core.lua', 'Navigation.lua', 'Map.lua', 'Guide.lua', 'Window.lua', 'Tracker.lua']);
 for (const file of files) {

@@ -1,5 +1,6 @@
 ## Interface: 16001
 ## Title: PlxTogether
+## IconTexture: Interface\AddOns\PlxTogether\Media\paddington.tga
 ## Notes: Experimental Horde party quest planner for Forever beta
 ## Author: David
 ## Version: 0.5.0
