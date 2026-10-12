@@ -21,6 +21,14 @@ function HT.MemberNames(names)
     for _, name in ipairs(names or {}) do short[#short + 1] = name:match("^[^-]+") end
     return table.concat(short, ", ")
 end
+-- Navigation changes the target only; it never marks a quest complete.
+function HT.ActiveStopIndex()
+    return math.max(1, math.min(HT.selectedStop or 1, #HT.stops))
+end
+function HT.SelectStop(index)
+    HT.selectedStop = math.max(1, math.min(index, #HT.stops))
+    if HT.RenderTracker then HT.RenderTracker() end
+end
 local function roster()
     local result = {}
     for i = 1, 4 do
@@ -72,6 +80,7 @@ function HT.Rebuild()
         local pos = C_Map.GetPlayerMapPosition(HT.me.mapID, "player")
         HT.stops, HT.notes = HT.Planner.Stops(HT.ranked, HT.me.mapID, pos and pos.x, pos and pos.y)
         HT.routeKey = key
+        HT.selectedStop = 1
     end
 end
 function HT.Scan()

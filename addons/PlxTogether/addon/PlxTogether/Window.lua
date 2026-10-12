@@ -137,6 +137,7 @@ local function showCard(index, title, body, active, number)
         cards[index] = card
     end
     card.number:SetText(number or "·")
+    card:EnableMouse(false); card:SetScript("OnMouseUp", nil)
     card.body:Show()
     if card.rows then for _, row in ipairs(card.rows) do row:Hide() end end
     if card.meta then card.meta:Hide() end
@@ -151,12 +152,15 @@ local function showCard(index, title, body, active, number)
 end
 local function showRouteCard(index, stop, number)
     local title = #stop.tasks > 1 and "Shared stop" or stop.tasks[1].quest.name
-    local card = showCard(index, title, "", number == 1, string.format("%02d", number))
+    local active = number == HT.ActiveStopIndex()
+    local card = showCard(index, title, "", active, string.format("%02d", number))
+    card:EnableMouse(true)
+    card:SetScript("OnMouseUp", function(_, button) if button == "LeftButton" then HT.SelectStop(number) end end)
     card.body:Hide()
     if not card.meta then card.meta = label(card, "", "GameFontHighlightSmall", 52, -38, 394) end
     local offset = 22 + card.title:GetStringHeight()
     card.meta:ClearAllPoints(); card.meta:SetPoint("TOPLEFT", 52, -offset)
-    card.meta:SetText(string.format("%s · %d substep%s · %.1f, %.1f", number == 1 and "NEXT STOP" or "UPCOMING",
+    card.meta:SetText(string.format("%s · %d substep%s · %.1f, %.1f", active and "GPS TARGET" or "CLICK TO TARGET",
         #stop.tasks, #stop.tasks == 1 and "" or "s", stop.point.x*100, stop.point.y*100))
     card.meta:SetTextColor(0.67, 0.72, 0.75); card.meta:Show()
     offset = offset + card.meta:GetStringHeight() + 16
@@ -182,6 +186,7 @@ local function showRouteCard(index, stop, number)
         row.instruction:SetText(HT.TaskInstruction(task))
         local membersOffset = instructionOffset + row.instruction:GetStringHeight() + 8
         row.members:ClearAllPoints(); row.members:SetPoint("TOPLEFT", 48, -membersOffset)
+        row.members:SetWordWrap(true); row.members:SetNonSpaceWrap(true); row.members:SetHeight(0)
         row.members:SetText("Needed by: " .. HT.MemberNames(task.neededBy))
         row:SetHeight(membersOffset + row.members:GetStringHeight() + 16)
         row:Show(); offset = offset + row:GetHeight()
@@ -311,6 +316,7 @@ function HT.ShowWindow() scroll:SetVerticalScroll(0); window:Show(); render() en
 function HT.ToggleWindow() window:SetShown(not window:IsShown()) end
 function HT.ShowGuide() HT.guideShown = true; HT.ShowWindow() end
 function HT.FocusStop(index)
+    HT.SelectStop(index)
     HT.guideShown = false; HT.ShowWindow()
     scroll:SetVerticalScroll(math.min(routeOffsets[index] or 0, math.max(0, content:GetHeight() - scroll:GetHeight())))
 end

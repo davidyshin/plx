@@ -2,6 +2,7 @@ local _, HT = ...
 HT.Demo = {}
 local function point(x, y) return {mapID = 1413, x = x, y = y} end
 function HT.Demo.Start()
+    HT.selectedStop = 1
     HT.guideShown = false
     local catalog = {
         [9000001] = {id = 9000001, name = "Crossroads supply run", start = point(0.28, 0.3), finish = point(0.28, 0.3),
@@ -41,7 +42,7 @@ function HT.Demo.Rebuild()
 end
 function HT.Demo.Next()
     if not HT.demo then return end
-    local stop = HT.stops[1]
+    local stop = HT.stops[HT.ActiveStopIndex and HT.ActiveStopIndex() or 1]
     if not stop then return end
     for _, task in ipairs(stop.tasks) do
         for _, member in ipairs(HT.demo.members) do
@@ -57,6 +58,7 @@ function HT.Demo.Next()
     end
     HT.demo.x, HT.demo.y = stop.point.x, stop.point.y
     HT.demo.steps = HT.demo.steps + 1
+    HT.selectedStop = 1
     HT.Demo.Rebuild()
     if HT.ResetScroll then HT.ResetScroll() end
 end

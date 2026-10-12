@@ -29,7 +29,9 @@ foreach ($folder in @('Questie', 'QuestieDB')) {
     if (-not (Test-Path -LiteralPath "$package\AddOns\$folder" -PathType Container)) { throw "Upstream package missing $folder" }
 }
 Copy-Item -LiteralPath "$PSScriptRoot\addon\PlxTogether" -Destination "$package\AddOns" -Recurse
-Copy-Item -LiteralPath "$PSScriptRoot\Install-Friends.ps1", "$PSScriptRoot\Install-Friends.cmd", "$PSScriptRoot\FRIENDS-INSTALL.md" -Destination $package
+New-Item -ItemType Directory -Path "$package\Support" -Force | Out-Null
+Copy-Item -LiteralPath "$PSScriptRoot\Install-Friends.ps1" -Destination "$package\Support"
+Copy-Item -LiteralPath "$PSScriptRoot\PACKAGE-README.txt" -Destination "$package\README.txt"
 & "$PSScriptRoot\Build-Installer.ps1" -OutputDirectory $package
 # Keep the upstream source, build scripts and license alongside the unmodified addons.
 Download 'https://codeload.github.com/Questie/Questie/zip/29f066c' "$package\ThirdParty\Questie-source-29f066c.zip"

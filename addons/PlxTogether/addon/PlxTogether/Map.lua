@@ -9,7 +9,7 @@ local function createPin(canvas)
     local anchor = CreateFrame("Frame", nil, canvas)
     anchor:SetSize(1,1)
     local pin = CreateFrame("Button", nil, anchor)
-    pin:SetSize(32,32); pin:SetPoint("CENTER"); pin:SetFrameLevel(canvas:GetFrameLevel()+30)
+    pin:SetFrameStrata("HIGH"); pin:SetSize(32,32); pin:SetPoint("CENTER"); pin:SetFrameLevel(canvas:GetFrameLevel()+1000)
     pin.anchor = anchor
     pin.disk = pin:CreateTexture(nil,"BACKGROUND"); pin.disk:SetAllPoints()
     pin.disk:SetTexture("Interface\\AddOns\\PlxTogether\\Media\\route-pin.tga")
@@ -55,9 +55,11 @@ updater:SetScript("OnUpdate",function(_,delta)
             local pin = pins[count]
             if not pin then pin=createPin(canvas); pins[count]=pin end
             pin.stop, pin.index = stop,i
-            pin.text:SetText(i); pin.badge:SetShown(i==1)
-            pin.disk:SetVertexColor(i==1 and 0.96 or 0.61,i==1 and 0.78 or 0.84,i==1 and 0.45 or 0.79)
-            pin:SetSize(i==1 and 38 or 30,i==1 and 38 or 30); pin:SetScale(1/scale)
+            local active = i == (HT.ActiveStopIndex and HT.ActiveStopIndex() or 1)
+            pin:SetFrameLevel(canvas:GetFrameLevel()+1000)
+            pin.text:SetText(i); pin.badge:SetShown(active)
+            pin.disk:SetVertexColor(active and 0.96 or 0.61,active and 0.78 or 0.84,active and 0.45 or 0.79)
+            pin:SetSize(active and 38 or 30,active and 38 or 30); pin:SetScale(1/scale)
             local x,y=stop.point.x*canvas:GetWidth(),-stop.point.y*canvas:GetHeight()
             pin.anchor:ClearAllPoints(); pin.anchor:SetPoint("CENTER",canvas,"TOPLEFT",x,y)
             pin.anchor:Show()

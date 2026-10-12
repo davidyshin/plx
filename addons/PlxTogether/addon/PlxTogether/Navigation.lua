@@ -33,8 +33,8 @@ function HT.Navigation.Dimensions(mapID)
     end
 end
 function HT.Navigation.State()
-    if HT.error or HT.waiting or not HT.me or not HT.stops[1] then return nil, "No active stop" end
-    local point = HT.stops[1].point
+    if HT.error or HT.waiting or not HT.me or not HT.stops[HT.ActiveStopIndex and HT.ActiveStopIndex() or 1] then return nil, "No active stop" end
+    local point = HT.stops[HT.ActiveStopIndex and HT.ActiveStopIndex() or 1].point
     if HT.demo then
         return HT.Navigation.Calculate(HT.demo.x, HT.demo.y, point.x, point.y, 8000, 6000, 0)
     end

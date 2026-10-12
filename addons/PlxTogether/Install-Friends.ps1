@@ -1,7 +1,9 @@
 param([string]$ClientPath)
 $ErrorActionPreference = 'Stop'
 try {
-    $source = Join-Path $PSScriptRoot 'AddOns'
+    $packageRoot = $PSScriptRoot
+    if ((Split-Path $PSScriptRoot -Leaf) -eq 'Support') { $packageRoot = Split-Path $PSScriptRoot -Parent }
+    $source = Join-Path $packageRoot 'AddOns'
     if (-not (Test-Path -LiteralPath "$source\PlxTogether\PlxTogether.toc") -or -not (Test-Path -LiteralPath "$source\Questie") -or -not (Test-Path -LiteralPath "$source\QuestieDB")) {
         throw 'This is not the complete installer package. Download PlxTogether-Friends.zip from https://github.com/davidyshin/plx/releases/tag/plxtogether-v0.5.0 (not Source code), extract the whole ZIP, and run the installer beside its AddOns folder. If using the source repository, first run Build-Friends-Bundle.ps1, then extract dist\PlxTogether-Friends.zip.'
     }
@@ -19,7 +21,7 @@ try {
     $addons = Join-Path $client 'Interface\AddOns'
     $folders = @(Get-ChildItem -LiteralPath $source -Directory)
     New-Item -ItemType Directory -Path $addons -Force | Out-Null
-    $backup = Join-Path $PSScriptRoot ('Backups\' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N'))
+    $backup = Join-Path $packageRoot ('Backups\' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N'))
     foreach ($folder in $folders) {
         $target = Join-Path $addons $folder.Name
         if (Test-Path -LiteralPath $target) {
@@ -39,7 +41,7 @@ try {
 } catch {
     Write-Host $_.Exception.Message -ForegroundColor Red
     if ($_.Exception -is [System.UnauthorizedAccessException]) {
-        Write-Host 'Windows denied access. Right-click Install-Friends.cmd and choose Run as administrator. Manual installation is also in FRIENDS-INSTALL.md.'
+        Write-Host 'Windows denied access. Run PlxTogether-Setup.exe and approve the Windows prompt. Manual installation is described in README.txt.'
     }
     exit 1
 }

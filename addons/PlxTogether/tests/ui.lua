@@ -44,7 +44,7 @@ function methods:CreateTexture(name) return widget(self, "Texture", name) end
 function methods:CreateLine(name) return widget(self, "Line", name) end
 for _, method in ipairs({"SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetClampedToScreen", "SetMovable",
     "EnableMouse", "RegisterForDrag", "RegisterEvent", "StartMoving", "StopMovingOrSizing", "SetFrameStrata", "SetFrameLevel",
-    "SetJustifyH", "SetTextColor", "SetSpacing", "SetAllPoints", "SetColorTexture", "ClearAllPoints", "SetThickness",
+    "SetWordWrap", "SetNonSpaceWrap", "SetJustifyH", "SetTextColor", "SetSpacing", "SetAllPoints", "SetColorTexture", "ClearAllPoints", "SetThickness",
     "SetStartPoint", "SetEndPoint", "SetScale", "SetScrollChild", "SetTexture", "SetVertexColor"}) do methods[method] = function() end end
 CreateFrame = function(kind, name, parent, template)
     local value = widget(parent, kind, name)
@@ -157,3 +157,18 @@ assert(not HT.mapPins[1].anchor:IsShown(),"Pins must hide on other maps")
 HT.Rebuild,HT.FocusStop=oldRebuild,oldFocus
 WorldMapFrame=nil
 print("Map presentation tests passed: markers, stable hover, zoom scaling, click-to-substeps, zone changes.")
+
+HT.Demo.Start(); HT.RenderTracker()
+assert(HT.MemberNames({"Two Words-Realm", "Another Name-Realm"}) == "Two Words, Another Name")
+local before = HT.demo.steps
+HT.upcomingButtons[1].scripts.OnClick(HT.upcomingButtons[1])
+assert(HT.ActiveStopIndex() == 2 and HT.demo.steps == before, "Skipping must not complete quests")
+HT.previousStop.scripts.OnClick()
+assert(HT.ActiveStopIndex() == 1, "Previous restores the preceding target")
+HT.ToggleArrowPopout(true); HT.ToggleTracker(false)
+assert(HT.arrowPopout:IsShown(), "Detached GPS survives hiding the tracker")
+HT.arrowPopout.scripts.OnDragStop()
+assert(PlxTogetherDB.arrowPosition[1] == "CENTER", "Detached position persists")
+HT.ToggleArrowPopout(false); HT.ToggleTracker(true)
+assert(not HT.arrowPopout:IsShown() and not PlxTogetherDB.arrowPopout)
+print("Navigation controls, names with spaces and detached GPS tests passed.")

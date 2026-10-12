@@ -26,6 +26,7 @@ local brand = label(-15, "GameFontNormalLarge")
 brand:ClearAllPoints(); brand:SetPoint("TOPLEFT",47,-15); brand:SetWidth(265); brand:SetText("Plx|cffeac383Together|r")
 local mode, current, tasks, upcoming = label(-40), label(-151, "GameFontNormal"), label(-193), label(-280)
 current:SetHeight(34); tasks:SetHeight(78); upcoming:SetHeight(42)
+tasks:SetWordWrap(true); tasks:SetNonSpaceWrap(true)
 local gps = CreateFrame("Frame", nil, tracker)
 gps:SetSize(60, 60); gps:SetPoint("TOPLEFT", 16, -70)
 local distance, direction = label(-83, "GameFontNormalLarge"), label(-109)
@@ -45,6 +46,7 @@ end
 local footerDivider=tracker:CreateTexture(nil,"ARTWORK")
 footerDivider:SetColorTexture(0.22,0.25,0.24,1); footerDivider:SetSize(298,1); footerDivider:SetPoint("BOTTOMLEFT",16,46)
 local function layout()
+    current:SetHeight(0); tasks:SetHeight(0); upcoming:SetHeight(0)
     local headingHeight=math.max(28,current:GetStringHeight())
     current:SetHeight(headingHeight)
     local bodyTop=151+headingHeight+10
@@ -56,7 +58,7 @@ local function layout()
     upcoming:ClearAllPoints(); upcoming:SetPoint("TOPLEFT",16,-nextTop)
     local upcomingHeight=math.max(14,upcoming:GetStringHeight()+3)
     upcoming:SetHeight(upcomingHeight)
-    tracker:SetHeight(math.max(360,nextTop+upcomingHeight+63))
+    tracker:SetHeight(math.max(360,nextTop+upcomingHeight+139))
 end
 function HT.RenderGPS()
     local state, reason = HT.Navigation.State()
@@ -77,6 +79,43 @@ function HT.RenderGPS()
         arrow[i]:SetEndPoint("CENTER", gps, segment[3], segment[4])
     end
 end
+local embeddedGPS, embeddedDistance, embeddedDirection, embeddedArrow = gps, distance, direction, arrow
+local popout = CreateFrame("Frame", "PlxTogetherArrow", UIParent, "BackdropTemplate")
+HT.arrowPopout = popout
+popout:SetSize(190,130); popout:SetPoint("CENTER",UIParent,"CENTER",0,160)
+popout:SetFrameStrata("HIGH"); popout:SetClampedToScreen(true); popout:SetMovable(true)
+popout:EnableMouse(true); popout:RegisterForDrag("LeftButton")
+popout:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
+popout:SetBackdropColor(0.035,0.043,0.055,0.85); popout:SetBackdropBorderColor(0.5,0.37,0.18,1)
+local floatingGPS = CreateFrame("Frame",nil,popout)
+floatingGPS:SetSize(60,60); floatingGPS:SetPoint("TOP",0,-12)
+local floatingArrow = {}
+for i=1,3 do floatingArrow[i]=floatingGPS:CreateLine(nil,"OVERLAY"); floatingArrow[i]:SetThickness(5); floatingArrow[i]:SetColorTexture(0.93,0.78,0.51,1) end
+local floatingDistance=popout:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
+floatingDistance:SetPoint("TOP",0,-77); floatingDistance:SetWidth(182)
+local floatingDirection=popout:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+floatingDirection:SetPoint("TOP",0,-100); floatingDirection:SetWidth(182)
+local dock=CreateFrame("Button",nil,popout,"UIPanelCloseButton"); dock:SetPoint("TOPRIGHT",2,2)
+dock:SetScript("OnClick",function() HT.ToggleArrowPopout(false) end)
+popout:SetScript("OnDragStart",function() popout:StartMoving() end)
+popout:SetScript("OnDragStop",function()
+    popout:StopMovingOrSizing(); local p,_,relative,x,y=popout:GetPoint(); db().arrowPosition={p,relative,x,y}
+end)
+function HT.ToggleArrowPopout(show)
+    db().arrowPopout=show; popout:SetShown(show)
+    embeddedGPS:SetShown(not show); embeddedDistance:SetShown(not show); embeddedDirection:SetShown(not show)
+    if show then gps,distance,direction,arrow=floatingGPS,floatingDistance,floatingDirection,floatingArrow
+    else gps,distance,direction,arrow=embeddedGPS,embeddedDistance,embeddedDirection,embeddedArrow end
+    HT.RenderGPS()
+end
+popout:Hide()
+local floatingElapsed, rebuildElapsed=0,0
+popout:SetScript("OnUpdate",function(_,delta)
+    floatingElapsed=floatingElapsed+delta
+    rebuildElapsed=rebuildElapsed+delta
+    if rebuildElapsed>=0.5 then rebuildElapsed=0; HT.Rebuild() end
+    if floatingElapsed>=0.05 then floatingElapsed=0; HT.RenderGPS() end
+end)
 tracker:SetScript("OnDragStart", function() tracker:StartMoving() end)
 tracker:SetScript("OnDragStop", function()
     tracker:StopMovingOrSizing()
@@ -98,6 +137,21 @@ local advance = button("Refresh", 222, function()
     if HT.demo then HT.Demo.Next() else HT.routeKey = nil; HT.Scan() end
     HT.RenderTracker()
 end)
+HT.upcomingButtons = {}
+for i = 1, 2 do
+    local b = CreateFrame("Button", nil, tracker, "UIPanelButtonTemplate")
+    b:SetSize(298, 23); b:SetPoint("BOTTOMLEFT", 16, 98 - (i-1)*25)
+    b:SetScript("OnClick", function(self) HT.SelectStop(self.target) end)
+    HT.upcomingButtons[i] = b
+end
+local function navButton(text, x, callback)
+    local b = CreateFrame("Button", nil, tracker, "UIPanelButtonTemplate")
+    b:SetSize(92,23); b:SetPoint("BOTTOMLEFT",x,48); b:SetText(text); b:SetScript("OnClick",callback)
+    return b
+end
+HT.previousStop = navButton("Previous",16,function() HT.SelectStop(HT.ActiveStopIndex()-1) end)
+HT.nextStop = navButton("Skip / Next",119,function() HT.SelectStop(HT.ActiveStopIndex()+1) end)
+navButton("Popout GPS",222,function() HT.ToggleArrowPopout(not db().arrowPopout) end)
 HT.trackerControls = {map = map, advance = advance, current = current, tasks = tasks, mode = mode, distance = distance, arrow = arrow}
 function HT.RenderTracker()
     HT.Rebuild()
@@ -106,23 +160,31 @@ function HT.RenderTracker()
     map:SetText(HT.demo and "Exit demo" or "Map")
     map:SetEnabled(HT.demo ~= nil or (HT.me ~= nil and not HT.error and not HT.waiting))
     advance:SetEnabled(not HT.demo or #HT.stops > 0)
-    local stop = HT.stops[1]
+    local index = HT.ActiveStopIndex()
+    local stop = HT.stops[index]
     HT.RenderGPS()
     if HT.error or HT.waiting or not stop then
         current:SetText(HT.demo and "Demo complete" or "Waiting for a route")
         tasks:SetText(HT.error or HT.waiting or (HT.demo and "All simulated quests finished. Open Details to reset or exit the preview." or "No confirmed stops yet. Open Details for party status, or try /plx demo."))
         upcoming:SetText("")
+        for _, b in ipairs(HT.upcomingButtons) do b:Hide() end
+        HT.previousStop:SetEnabled(false); HT.nextStop:SetEnabled(false)
         layout()
         return
     end
-    current:SetText("NEXT · " .. HT.Planner.Title(stop))
+    current:SetText("STOP " .. index .. " · " .. HT.Planner.Title(stop))
     local task = stop.tasks[1]
-    local lines = {"|cffeac3831.1  " .. task.action:upper() .. "|r", HT.TaskInstruction(task),
+    local lines = {"|cffeac383" .. index .. ".1  " .. task.action:upper() .. "|r", HT.TaskInstruction(task),
         "|cff91b9b1Needed by: " .. HT.MemberNames(task.neededBy) .. "|r"}
     if #stop.tasks > 1 then lines[#lines + 1] = "+ " .. (#stop.tasks - 1) .. " substeps · open Details" end
     tasks:SetText(table.concat(lines, "\n"))
-    local nextStops = {"|cff87939fUP NEXT|r"}
-    for i = 2, math.min(3, #HT.stops) do nextStops[#nextStops + 1] = i .. " · " .. HT.Planner.Title(HT.stops[i]) end
+    local nextStops = {"|cff87939fUP NEXT - click a stop below|r"}
+    for slot, b in ipairs(HT.upcomingButtons) do
+        local target = index + slot
+        b.target = target; b:SetShown(HT.stops[target] ~= nil)
+        b:SetText(HT.stops[target] and (target .. " - " .. HT.Planner.Title(HT.stops[target])) or "")
+    end
+    HT.previousStop:SetEnabled(index > 1); HT.nextStop:SetEnabled(index < #HT.stops)
     upcoming:SetText(table.concat(nextStops, "\n"))
     layout()
 end
@@ -133,6 +195,11 @@ function HT.ToggleTracker(show)
     if show then HT.RenderTracker() end
 end
 tracker:SetScript("OnEvent", function()
+    HT.ToggleArrowPopout(db().arrowPopout == true)
+    local arrowSaved = db().arrowPosition
+    if type(arrowSaved) == "table" and type(arrowSaved[1]) == "string" and type(arrowSaved[2]) == "string" and type(arrowSaved[3]) == "number" and type(arrowSaved[4]) == "number" then
+        HT.arrowPopout:ClearAllPoints(); HT.arrowPopout:SetPoint(arrowSaved[1], UIParent, arrowSaved[2], arrowSaved[3], arrowSaved[4])
+    end
     local saved = db().trackerPosition
     if type(saved) == "table" and type(saved[1]) == "string" and type(saved[2]) == "string"
         and type(saved[3]) == "number" and type(saved[4]) == "number" then

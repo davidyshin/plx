@@ -140,5 +140,5 @@ An independent database and optional local-model/Gemini companion can follow.
 - The direction arrow points to the next stop, updates as you turn, and shows approximate yards. It is direct compass guidance, not terrain-aware navigation. At the stop does not complete a quest.
 - Route stops contain separate action-labelled substeps (1.1, 1.2), dividers, and Needed by lists. Click a live map pin to open that stop's instructions.
 - SOLO MODE is your real character. PARTY MODE is your real party. DEMO · SIMULATED is the fictional test, with an Exit demo button on the tracker. /plx live leaves the demo.
-- The complete friends ZIP includes PlxTogether-Setup.exe, a Windows installer with the Paddington logo and game-folder selection. Extract the entire ZIP before launching it; keep the executable beside Install-Friends.ps1 and AddOns. The source checkout is not an installable friends package.
+- The complete friends ZIP includes PlxTogether-Setup.exe, a Windows installer with the Paddington logo and game-folder selection. Extract the entire ZIP before launching it; keep the executable beside the Support and AddOns folders. The source checkout is not an installable friends package.
 - Website previews are interactive illustrations using sample data, not screenshots of a running game.

@@ -74,9 +74,10 @@ internal sealed class SetupForm : Form {
     }
     private void Install(object sender,EventArgs e) {
         string root=AppDomain.CurrentDomain.BaseDirectory;
-        string script=Path.Combine(root,"Install-Friends.ps1");
+        string script=Path.Combine(root,"Support","Install-Friends.ps1");
+        if(!File.Exists(script)) script=Path.Combine(root,"Install-Friends.ps1");
         if(!File.Exists(script)||!Directory.Exists(Path.Combine(root,"AddOns","Questie"))||!Directory.Exists(Path.Combine(root,"AddOns","QuestieDB"))||!File.Exists(Path.Combine(root,"AddOns","PlxTogether","PlxTogether.toc"))) {
-            MessageBox.Show(this,"Extract the entire PlxTogether-Friends.zip first. Keep this executable beside Install-Friends.ps1 and the AddOns folder.","Complete package required",MessageBoxButtons.OK,MessageBoxIcon.Information); return;
+            MessageBox.Show(this,"Extract the entire PlxTogether-Friends.zip first. Keep this executable beside the Support and AddOns folders.","Complete package required",MessageBoxButtons.OK,MessageBoxIcon.Information); return;
         }
         string client;
         try { client=Path.GetFullPath(folder.Text.Trim().Trim('"')); } catch { status.Text="Choose a valid client folder."; return; }
