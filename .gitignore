@@ -8,3 +8,5 @@ dist
 
 # Local Supabase CLI state
 supabase/.temp
+addons/PlxTogether/dist/
+addons/PlxTogether/.npm-cache/

@@ -1,0 +1,7 @@
+dofile("tests/planner.lua")
+dofile("tests/objectives.lua")
+dofile("tests/protocol.lua")
+dofile("tests/provider.lua")
+dofile("tests/core.lua")
+dofile("tests/demo.lua")
+dofile("tests/ui.lua")

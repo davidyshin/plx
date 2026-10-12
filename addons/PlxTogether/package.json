@@ -1,0 +1,9 @@
+{
+  "name": "plx-together-dev",
+  "private": true,
+  "scripts": {
+    "test": "node tests/check-manifest.cjs && node tests/parse.cjs && fengari tests/run.lua",
+    "check:manifest": "node tests/check-manifest.cjs"
+  },
+  "devDependencies": { "fengari-node-cli": "0.1.0", "luaparse": "0.3.1" }
+}

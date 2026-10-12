@@ -395,6 +395,7 @@ export default function App() {
                 <BookOpen size={17} /> availability summary
               </button>
               <a href="#roster">view roster</a>
+              <a href="/plxtogether/">PlxTogether addon</a>
             </div>
           </div>
           <div className="hero-panel">

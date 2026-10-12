@@ -1,0 +1,12 @@
+local _, HT = ...
+HT.Guide = {
+    {"On-screen tracker", "Close Details to follow your route on the small tracker. Drag it to move it. /plx hud toggles it; /plx hud show restores it. The tracker lists the current stop, who needs it, coordinates, and upcoming stops. In the solo preview, Next step advances the simulated route."},
+    {"1. Try it solo", "Type /plx demo or click Try solo demo. Three sample players show how shared quests and XP differences affect the route. Questie is not needed for this preview."},
+    {"2. Follow the gold stop", "Start with the highlighted NEXT card. Its number matches the route overview and, in live mode, the world map. Nearby tasks share one stop. The For line names who needs each task."},
+    {"3. Practice the full route", "In demo mode, Next step completes the highlighted simulated stop. Pickups become objectives, then turn-ins. Reset demo starts over. Exit demo returns to your character. Nothing in the demo changes your quests."},
+    {"4. Quest with friends", "For live routes, every Horde party member needs PlxTogether and a Forever-compatible Questie. Form a normal party and meet in the same zone. Wait for everyone to show Ready. Missing or stale data pauses shared recommendations."},
+    {"5. Complete quests normally", "Pick up, complete, and turn in quests yourself. The route updates as progress arrives. World map opens numbered stops. The overview is a schematic, not a road map. Refresh route reorders from your current position."},
+    {"6. Understand the XP", "Why these quests? shows each member's estimated quest XP and level retention. A lower retention means a level penalty. The planner favors quests everyone can do and gives extra weight to the lowest individual benefit. XP estimates still need Forever beta validation."},
+    {"7. If no route appears", "Check the party summary, then /plx status. Confirm everyone uses the same addon version and zone, Questie has loaded, and you are not in a raid. Some quests may be completed, locked, missing XP, or have no local coordinates. Use /reload if an addon has just been updated."},
+    {"Commands", "/plx — window\n/plx guide — this guide\n/plx demo — solo preview\n/plx demo next — advance preview\n/plx demo reset — restart preview\n/plx live — leave preview\n/plx refresh — refresh route\n/plx map — world map\n/plx status — party readiness\n/plx list — print recommendations"},
+}

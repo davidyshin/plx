@@ -1,0 +1,44 @@
+name: PlxTogether friends package
+on:
+  push:
+    tags: ['plxtogether-v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build website
+        run: |
+          npm ci --ignore-scripts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run build
+      - name: Test addon
+        working-directory: addons/PlxTogether
+        run: |
+          npm install --ignore-scripts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm test
+      - name: Test installer
+        shell: powershell
+        run: ./addons/PlxTogether/tests/installer.ps1
+      - name: Build complete package
+        shell: powershell
+        run: ./addons/PlxTogether/Build-Friends-Bundle.ps1
+      - name: Publish package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $tag = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME } else { 'plxtogether-v0.4.0' }
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --target $env:GITHUB_SHA --title 'PlxTogether 0.4.0 + Questie' --notes 'One download with PlxTogether, Questie, matching upstream source, and a Windows installer. Forever beta Horde prototype; XP rules and UI need in-game validation.'
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          gh release upload $tag addons/PlxTogether/dist/PlxTogether-Friends.zip addons/PlxTogether/dist/SHA256SUMS.txt --clobber

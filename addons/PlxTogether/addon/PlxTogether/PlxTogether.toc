@@ -1,0 +1,16 @@
+## Interface: 16001
+## Title: PlxTogether
+## Notes: Experimental Horde party quest planner for Forever beta
+## Author: David
+## Version: 0.4.0
+## SavedVariables: PlxTogetherDB
+## OptionalDeps: Questie
+Planner.lua
+Protocol.lua
+Provider.lua
+Demo.lua
+Core.lua
+Map.lua
+Guide.lua
+Window.lua
+Tracker.lua
